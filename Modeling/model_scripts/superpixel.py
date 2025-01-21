@@ -166,7 +166,7 @@ def visualize_patches(image_data, field_numbers_test, patch_coordinates, field_i
 
 ############# Functions for non-temporal images #############
 def get_last_timestep_patches(patches):
-    last_timestep_patches = patches_tensor[:, -1, :, :, :]  # Shape becomes (N, C, H, W)
+    last_timestep_patches = patches[:, -1, :, :, :]  # Shape becomes (N, C, H, W)
     return last_timestep_patches
 
 

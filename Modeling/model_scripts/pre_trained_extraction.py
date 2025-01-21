@@ -7,6 +7,9 @@ from torchvision.models import vgg16, VGG16_Weights
 import torch.nn.functional as F
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score 
+from torchgeo.models import resnet18
+from torchgeo.models import ResNet18_Weights
+
 
 def get_pretrained_resnet50(in_channels):
     """Load ResNet-50 and freeze weights for feature extraction."""
@@ -75,3 +78,40 @@ def perform_clustering(train_features, n_clusters=2, random_state=42):
 #     test_gt_aligned, test_pred_aligned = get_gt_and_pred_aligned(test_fields, test_predictions, config.labels_path)
 #     test_metrics = evaluate_clustering_metrics(test_gt_aligned, test_pred_aligned)
 #     return test_metrics
+
+
+####### Feature Extraction for torch.geo models ########
+def extract_features_resnet(dataset, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_ALL_MOCO):
+
+    model = resnet18(weights=pretrained_weights)
+    original_conv1 = model.conv1
+    new_conv1 = nn.Conv2d(
+        in_channels=num_channels,
+        out_channels=original_conv1.out_channels,
+        kernel_size=original_conv1.kernel_size,
+        stride=original_conv1.stride,
+        padding=original_conv1.padding,
+        bias=original_conv1.bias is not None,
+    )
+    with torch.no_grad():
+        new_conv1.weight[:, :3] = original_conv1.weight[:, :3]
+        if num_channels > 3:
+            new_conv1.weight[:, 3:] = torch.randn_like(new_conv1.weight[:, 3:]) * 0.01
+    model.conv1 = new_conv1
+    feature_extractor = nn.Sequential(*list(model.children())[:-1])
+    model.eval()
+    with torch.no_grad():
+        features = feature_extractor(dataset)
+    # return features.view(features.size(0), -1).cpu().numpy()
+    return features
+
+
+def extract_features_resnet_rgb(dataset, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_RGB_MOCO):
+    model = resnet18(weights=pretrained_weights)
+    dataset_rgb = dataset[:, :3, :, :]  #(batch_size, 10, height, width)
+    feature_extractor = nn.Sequential(*list(model.children())[:-1])
+    model.eval()
+    with torch.no_grad():
+        features = feature_extractor(dataset_rgb)  
+    # return features.view(features.size(0), -1).cpu().numpy()
+    return features
