@@ -116,18 +116,15 @@ def refine_temporal_stack(temporal_stack_patches, stack_size, date_ranges):
 
 def refine_temporal_stack_raw(temporal_stack_patches, stack_size, date_ranges):
     """
-    Refine temporal stacks by selecting cloud-free images within specified date ranges.
-    
-    Args: temporal_stack_patches (list): List of patches, where each patch is a temporal stack of images.
-                                       Each image is assumed to have at least 12 channels:
+    Refine temporal stacks by selecting cloud-free images within specified date ranges
+    Args: temporal_stack_patches (list): List of patches, where each patch is a temporal stack of images
+                                       Each image is has 12 channels:
                                        - 12th channel: date values in yyyymmdd.0 format
                                        - 11th channel: sugarbeed field mask (1 indicates field, 0 no field)
                                        - 10th channel: cloud mask (1 indicates cloud, 0 no cloud)
-        stack_size (int): Number of date ranges (should match len(date_ranges)).
-        date_ranges (list): List of tuples (label, start_date, end_date) with date ranges.
-                            Example: [("early_june", "2023-06-01", "2023-06-10"), ...]
-    
-    Returns: list: Refined temporal stack patches that meet the criteria.
+        stack_size (int): Number of date ranges (should match len(date_ranges))
+        date_ranges (list): List of tuples (label, start_date, end_date) with date ranges   
+    Returns: list: Refined temporal stack patches that meet the criteria
     """
     final_patches = []
     

@@ -115,3 +115,40 @@ def extract_features_resnet_rgb(dataset, num_channels, pretrained_weights=ResNet
         features = feature_extractor(dataset_rgb)  
     # return features.view(features.size(0), -1).cpu().numpy()
     return features
+
+
+
+############ Temporal feature extraction ############## change lstm to autoencoder ##############
+class SpatioTemporalFeatureExtractor(nn.Module):
+    def __init__(self, spatial_weights, input_channels, hidden_dim=256, lstm_layers=1):
+        super().__init__()
+        self.spatial_model = resnet18(weights=spatial_weights)
+        original_conv1 = self.spatial_model.conv1
+        self.spatial_model.conv1 = nn.Conv2d(
+            in_channels=input_channels,
+            out_channels=original_conv1.out_channels,
+            kernel_size=original_conv1.kernel_size,
+            stride=original_conv1.stride,
+            padding=original_conv1.padding,
+            bias=original_conv1.bias is not None,
+        )
+        self.spatial_features_dim = self.spatial_model.fc.in_features
+        self.spatial_model.fc = nn.Identity()
+        
+        self.temporal_model = nn.LSTM(
+            input_size=self.spatial_features_dim,
+            hidden_size=hidden_dim,
+            num_layers=lstm_layers,
+            batch_first=True,
+        )
+    
+    def forward(self, x):
+        batch_size, channels, timesteps, height, width = x.shape
+        # x = x.permute(0, 2, 1, 3, 4)  # (batch, timesteps, channels, height, width)
+        spatial_features = []
+        for t in range(timesteps):
+            timestep_features = self.spatial_model(x[:, t])
+            spatial_features.append(timestep_features)
+        spatial_features = torch.stack(spatial_features, dim=1)  # (batch, timesteps, spatial_features_dim)
+        temporal_features, _ = self.temporal_model(spatial_features)
+        return temporal_features[:, -1]  # last timestep's features?

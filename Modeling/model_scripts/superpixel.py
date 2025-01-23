@@ -56,7 +56,7 @@ def train_kmeans_patches(train_patches, n_clusters, random_state):
     return kmeans
 
 
-def assign_field_labels(patch_coordinates, patch_predictions, threshold=1):
+def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
     """
     Assign field-level labels based on patch predictions.
     Returns: field_labels: Dictionary {field_number: field_label}.
@@ -74,7 +74,7 @@ def assign_field_labels(patch_coordinates, patch_predictions, threshold=1):
     
     for field_number, predictions in field_dict.items():
         diseased_patch_count = np.sum(np.array(predictions) == 1)
-        field_labels[field_number] = 1 if diseased_patch_count >= threshold else 0
+        field_labels[field_number] = 1 if diseased_patch_count >= (threshold * len(predictions)) else 0
 
     return field_labels
 
