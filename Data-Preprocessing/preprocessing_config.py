@@ -18,6 +18,8 @@ fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MAS
 labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 trained_models_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Modeling/Trained_Models/'
 
+patch_to_field_threshold = 0.5
+
 temporal_stack_size = 7
 # temporal_points_old = [
 #     ("early_june", "2019-06-01", "2019-06-10"),
