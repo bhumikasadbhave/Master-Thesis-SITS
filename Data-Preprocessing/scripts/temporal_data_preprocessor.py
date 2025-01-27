@@ -162,8 +162,7 @@ def refine_temporal_stack_raw(temporal_stack_patches, stack_size, date_ranges):
                     if cloud_free:
                         refined_patch_stack.append(temporal_image)
                         patch_flags[idx] = 1
-                        # date_selected = True
-                        # break
+
                         images_found += 1           # Increment valid image count
                         if idx == 3:                # Ensure only one image for september
                             break
@@ -171,6 +170,7 @@ def refine_temporal_stack_raw(temporal_stack_patches, stack_size, date_ranges):
                         if images_found == 2:       # Stop after finding two valid images for this range
                             patch_flags[idx+len(date_ranges)] = 1
                             break
+
                             
         #if np.all(patch_flags == 1):
         if np.all(patch_flags != 0):
@@ -180,6 +180,79 @@ def refine_temporal_stack_raw(temporal_stack_patches, stack_size, date_ranges):
             print(f"Flag array was: ",patch_flags)
     
     return final_patches
+
+
+def refine_temporal_stack_interval5(temporal_stack_patches, stack_size, date_ranges):
+    """
+    Refine temporal stacks by selecting cloud-free images within specified date ranges and ensuring a 5-day gap between selected images.
+    Args: temporal_stack_patches (list): List of patches, where each patch is a temporal stack of images
+                                       Each image has 12 channels:
+                                       - 12th channel: date values in yyyymmdd.0 format
+                                       - 11th channel: sugarbeet field mask (1 indicates field, 0 no field)
+                                       - 10th channel: cloud mask (1 indicates cloud, 0 no cloud)
+        stack_size (int): Number of date ranges (should match len(date_ranges))
+        date_ranges (list): List of tuples (label, start_date, end_date) with date ranges
+    Returns: list: Refined temporal stack patches that meet the criteria
+    """
+    final_patches = []
+    
+    for patch_stack in temporal_stack_patches:
+        patch_flags = np.zeros(stack_size)
+        refined_patch_stack = []
+        selected_dates = []  # To store already selected dates for this patch
+
+        for idx, (_, start_date, end_date) in enumerate(date_ranges):
+            # Convert date range strings to datetime objects
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            date_selected = False
+            images_found = 0  # Number of images found for this range
+
+            for temporal_image in patch_stack:
+                date_channel = temporal_image[..., 12]          # 13th channel: date values
+                field_mask = temporal_image[..., 11]            # 12th channel: sugar-beet field id mask
+                binary_mask = (field_mask > 0).astype(np.uint8) # Binary mask for sugar-beet fields
+                cloud_mask = temporal_image[..., 10]            # 10th channel: cloud mask
+                valid_dates = date_channel[date_channel != 0]   # Non-zero date values
+
+                if len(valid_dates) == 0:
+                    continue
+
+                int_date = int(valid_dates[0])  # Date: yyyymmdd.0
+                year = int_date // 10000
+                month = (int_date // 100) % 100
+                day = int_date % 100
+                image_date = datetime(year, month, day)
+
+                # Check if the image is within the date range and meets the 5-day condition
+                if start_date <= image_date <= end_date:
+                    # Ensure a minimum 5-day gap from already selected dates
+                    if all(abs((image_date - prev_date).days) >= 5 for prev_date in selected_dates):
+                        field_pixels = binary_mask == 1                          # Identify pixels corresponding to sugar-beet fields
+                        cloud_free = np.all(cloud_mask[field_pixels] == 1)       # Check if field pixels are cloud-free
+                        if cloud_free:
+                            refined_patch_stack.append(temporal_image)
+                            patch_flags[idx] = 1
+                            selected_dates.append(image_date)  # Store the selected date
+                            images_found += 1
+
+                            if idx == 3:  # Only one image for September
+                                break
+
+                            if images_found == 2:  # Stop after finding two valid images for this range
+                                patch_flags[idx + len(date_ranges)] = 1
+                                break
+
+        # Append the patch stack only if all date ranges have at least one image
+        if np.all(patch_flags != 0):
+            final_patches.append(refined_patch_stack)
+        else:
+            print(f"Patch discarded: Missing images for some date ranges.")
+            print(f"Flag array was: ", patch_flags)
+
+    return final_patches
+
+
 
 
 # Used only once: Remove Border Pixels for fields
