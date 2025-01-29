@@ -55,14 +55,13 @@ def train_kmeans_patches(train_patches, n_clusters, random_state):
     kmeans.fit(flattened_patches)
     return kmeans
 
-
-def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
+def assign_field_labels1(patch_coordinates, patch_predictions, threshold=0.1):
     """
     Assign field-level labels based on patch predictions.
     Returns: field_labels: Dictionary {field_number: field_label}.
     """
     field_dict = {}
-    for (field_number, _, _), prediction in zip(patch_coordinates, patch_predictions):
+    for (field_number, _, _, _), prediction in zip(patch_coordinates, patch_predictions):
         if field_number not in field_dict:
             field_dict[field_number] = []
         field_dict[field_number].append(prediction)
@@ -77,6 +76,29 @@ def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
         field_labels[field_number] = 1 if diseased_patch_count >= (threshold * len(predictions)) else 0
 
     return field_labels
+
+
+# def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
+#     """
+#     Assign field-level labels based on patch predictions.
+#     Returns: field_labels: Dictionary {field_number: field_label}.
+#     """
+#     field_dict = {}
+#     for (field_number, _, _), prediction in zip(patch_coordinates, patch_predictions):
+#         if field_number not in field_dict:
+#             field_dict[field_number] = []
+#         field_dict[field_number].append(prediction)
+
+#     # Aggregate predictions for each field
+#     field_labels = {}
+#     # for field_number, predictions in field_dict.items():
+#     #     field_labels[field_number] = int(np.any(np.array(predictions) == 1)) 
+    
+#     for field_number, predictions in field_dict.items():
+#         diseased_patch_count = np.sum(np.array(predictions) == 1)
+#         field_labels[field_number] = 1 if diseased_patch_count >= (threshold * len(predictions)) else 0
+
+#     return field_labels
 
 
 
