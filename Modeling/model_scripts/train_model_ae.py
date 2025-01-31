@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutu
 
 
 
-def train_model_ae(model, dataloader, epochs=10, lr=0.001, device='mps'):
+def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
     
     # Loss and optimizer
     criterion = nn.MSELoss()
@@ -36,6 +36,49 @@ def train_model_ae(model, dataloader, epochs=10, lr=0.001, device='mps'):
     return model, epoch_losses
 
 
+def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
+    
+    # Loss and optimizer
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    
+    epoch_train_losses = []
+    epoch_test_losses = []
+    
+    # Training loop
+    for epoch in range(epochs):
+        model.train()  
+        train_loss = 0.0
+        for inputs_cpu, field_numbers in train_dataloader:
+            inputs = inputs_cpu.to(device)
+            optimizer.zero_grad()
+            latent, reconstructed = model(inputs)
+            loss = criterion(reconstructed, inputs)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+        
+        epoch_train_losses.append(train_loss / len(train_dataloader))
+        
+        # Evaluate on the test set
+        model.eval()  
+        test_loss = 0.0
+        with torch.no_grad():  
+            for inputs_cpu, field_numbers in test_dataloader:
+                inputs = inputs_cpu.to(device)
+                latent, reconstructed = model(inputs)
+                loss = criterion(reconstructed, inputs)
+                test_loss += loss.item()
+        
+        epoch_test_losses.append(test_loss / len(test_dataloader))
+        
+        # Print the loss for both train and test sets
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.4f}, Test Loss: {test_loss / len(test_dataloader):.4f}")
+    
+    return model, epoch_train_losses, epoch_test_losses
+
+
+
 def extract_features_ae(model, dataloader, device='mps'):
     features = []
     field_numbers_all = []
@@ -47,6 +90,14 @@ def extract_features_ae(model, dataloader, device='mps'):
             features.append(latent.view(latent.size(0), -1))
             field_numbers_all.extend(field_numbers)
     return torch.cat(features), field_numbers_all
+
+
+def field_nos_dataloader(patch_coordinates):
+    new_coords = []
+    for coord in patch_coordinates:
+        field_num_coord = '_'.join(map(str, coord))  
+        new_coords.append(field_num_coord)
+    return new_coords
 
 
 
