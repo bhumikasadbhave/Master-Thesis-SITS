@@ -5,6 +5,10 @@ import matplotlib.patches as patches
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.cluster import KMeans
+import cv2
+from torchvision import transforms
+from PIL import Image, ImageDraw
+import os
 
 
 def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
@@ -79,7 +83,6 @@ def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
     return field_labels
 
 
-
 def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
     """
     Compare predicted field labels with ground truth loaded from a CSV file.
@@ -117,7 +120,6 @@ def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
     return accuracy, report
 
 
-
 def save_train_predictions_to_excel(train_field_labels, file_path):
     data = [{"Field Number": field_number, "Predicted Label": label}
             for field_number, label in train_field_labels.items()]
@@ -125,8 +127,6 @@ def save_train_predictions_to_excel(train_field_labels, file_path):
     df.to_excel(file_path, index=False)
 
 
-
-#### Visualisation ####
 def visualize_single_patch_temporal_rgb(patch, patch_coordinates, patch_size=5, num_of_timestamps=7):
 
     field_number, i, j = patch_coordinates  
@@ -146,7 +146,6 @@ def visualize_single_patch_temporal_rgb(patch, patch_coordinates, patch_size=5, 
     plt.show()
 
 
-
 def visualize_patches(image_data, field_numbers_test, patch_coordinates, field_index, patch_size=5):
 
     num_of_img_train, t, channels, height, width = image_data.shape
@@ -163,10 +162,102 @@ def visualize_patches(image_data, field_numbers_test, patch_coordinates, field_i
     plt.show()
 
 
-
-############# Functions for non-temporal images #############
 def get_last_timestep_patches(patches):
     last_timestep_patches = patches[:, -1, :, :, :]  # Shape becomes (N, C, H, W)
     return last_timestep_patches
+
+
+################################ functions for AE #######################################
+
+def assign_field_labels_ae(patch_coordinates, patch_predictions, threshold=0.1):
+    """
+    Assign field-level labels based on patch predictions.
+    Returns: field_labels: Dictionary {field_number: field_label}.
+    """
+    field_dict = {}
+    for field_number, prediction in zip(patch_coordinates, patch_predictions):
+        if field_number not in field_dict:
+            field_dict[field_number] = []
+        field_dict[field_number].append(prediction)
+
+    field_labels = {}    
+    for field_number, predictions in field_dict.items():
+        diseased_patch_count = np.sum(np.array(predictions) == 1)
+        field_labels[field_number] = 1 if diseased_patch_count >= (threshold * len(predictions)) else 0
+
+    return field_labels
+
+
+def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
+    """
+    Compare predicted field labels with ground truth loaded from a CSV file.
+    Extracts last two numbers as (x, y) coordinates and maps them separately.
+    """
+    df = pd.read_csv(ground_truth_csv_path, sep=';')
+    ground_truth = {
+        str(row["Number"]): row["Disease"].strip().lower()  
+        for _, row in df.iterrows()
+    }
+
+    updated_test_field_labels = {}
+    x_y_coords = {}  
+
+    for field_number, label in test_field_labels.items():
+
+        split_field_numbers = field_number.split('_')
+        x, y = split_field_numbers[-2], split_field_numbers[-1]
+        field_ids = split_field_numbers[:-2]  
+        for field_id in field_ids:
+            updated_test_field_labels[str(int(float(field_id)))] = label
+        
+        x_y_coords[(int(float(x)), int(float(y)))] = label
+
+    y_pred = []
+    y_true = []
+
+    for field_number, predicted_label in updated_test_field_labels.items():
+        if field_number in ground_truth:
+            true_label = ground_truth[field_number]
+            y_pred.append(predicted_label)
+            y_true.append(1 if true_label == "yes" else 0)
+
+    accuracy = accuracy_score(y_true, y_pred)
+    report = classification_report(y_true, y_pred)
+
+    return accuracy, report, x_y_coords
+
+
+
+def draw_diseased_patches(dataloader, x_y_coords, save_path="output/"):
+    os.makedirs(save_path, exist_ok=True)
+
+    for batch_idx, batch in enumerate(dataloader):
+        images, field_ids = batch
+
+        for img_idx, (img, field_id) in enumerate(zip(images, field_ids)):
+            field_id = str(field_id)
+
+            img = img[img_idx, :3, -1, :, :]  # Use last time step
+
+            if img.shape[0] >= 3:
+                img_np = img[:3].permute(1, 2, 0).numpy() * 255
+            else:
+                img_np = img.mean(dim=0).numpy() * 255
+
+            img_np = img_np.astype(np.uint8)
+            img_pil = Image.fromarray(img_np)
+            draw = ImageDraw.Draw(img_pil)
+
+            split_field_numbers = field_id.split('_')
+            x, y = int(float(split_field_numbers[-2])), int(float(split_field_numbers[-1]))
+
+            if (x, y) in x_y_coords and x_y_coords[(x, y)] == 1:
+                rect_size = 5
+                top_left = (x - rect_size // 2, y - rect_size // 2)
+                bottom_right = (x + rect_size // 2, y + rect_size // 2)
+                draw.rectangle([top_left, bottom_right], outline="red", width=2)
+
+            img_pil.save(f"{save_path}/batch{batch_idx}_img{img_idx}_field_{field_id}.png")
+            print(f"Saved: batch{batch_idx}_img{img_idx}_field_{field_id}.png")
 
 
