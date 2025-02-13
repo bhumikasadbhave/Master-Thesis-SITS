@@ -45,6 +45,26 @@ def visualize_temporal_differences(temporal_differences):
     plt.show()
 
 
+import matplotlib.pyplot as plt
+
+def visualise_selected_bands(spectral_image):
+    """ Visualise specific Sentinel bands: 0 (Blue), 2 (Red), 6 (NIR), 8 (SWIR1) """
+    selected_bands = [0, 2, 6, 8]
+    band_labels = ["Blue", "Red", "NIR", "SWIR1"]
+    fig, axes = plt.subplots(1, 4, figsize=(20, 5))  # Single row, 4 columns
+    
+    for idx, (band, label) in enumerate(zip(selected_bands, band_labels)):
+        ax = axes[idx]
+        im = ax.imshow(spectral_image[:, :, band], cmap='viridis')  
+        
+        ax.set_title(f"{label} (Band {band+2})", fontsize=20)
+        ax.set_xticks([0, 20, 40, 60])  
+        ax.tick_params(axis='both', labelsize=16)
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 
 ###### Functions for visualising indices ######
@@ -81,7 +101,7 @@ def visualize_temporal_stack_rgb(temporal_stack):
         rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB
         ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
         ax.set_title(acquisition_date, fontsize=10)
-        ax.axis("off")
+        # ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
     plt.show()
@@ -122,7 +142,7 @@ def visualize_temporal_stack_ndvi(temporal_stack):
         
         ax.imshow(ndvi, cmap='RdYlGn', vmin=-1, vmax=1)
         ax.set_title(acquisition_date, fontsize=10)
-        ax.axis("off")
+        # ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
@@ -398,7 +418,7 @@ def visualize_temporal_stack_evi(temporal_stack):
 
         ax.imshow(evi, cmap='RdYlGn', vmin=-1, vmax=1)
         ax.set_title(acquisition_date, fontsize=10)
-        ax.axis("off")
+        # ax.axis("off")
     
     plt.tight_layout()
     plt.show()
@@ -437,7 +457,7 @@ def visualize_temporal_stack_msi(temporal_stack):
         
         ax.imshow(msi, cmap='coolwarm', vmin=0, vmax=2)
         ax.set_title(acquisition_date, fontsize=10)
-        ax.axis("off")
+        # ax.axis("off")
 
     plt.tight_layout()
     plt.show()

@@ -228,7 +228,7 @@ def multiple_indices_bands_temporal_cubes(temporal_images):
             # ci = (ci - np.min(ci)) / (np.max(ci) - np.min(ci) + 1e-6)
             evi = (evi - np.min(evi)) / (np.max(evi) - np.min(evi) + 1e-6)
 
-            relevant_bands = image[..., [0, 1, 2, 6, 8]]  # Blue, Green, Red, NIR, SWIR
+            relevant_bands = image[..., [0, 2, 6, 8]]  # Blue, Red, NIR, SWIR
             # temporal_cubes.append(np.dstack((ndvi, msi, ci, evi, relevant_bands)))
             temporal_cubes.append(np.dstack((ndvi, msi, evi, relevant_bands)))
         cubes.append(temporal_cubes)
