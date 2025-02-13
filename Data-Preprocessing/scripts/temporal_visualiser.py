@@ -58,7 +58,8 @@ def visualise_selected_bands(spectral_image):
         im = ax.imshow(spectral_image[:, :, band], cmap='viridis')  
         
         ax.set_title(f"{label} (Band {band+2})", fontsize=20)
-        ax.set_xticks([0, 20, 40, 60])  
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60]) 
         ax.tick_params(axis='both', labelsize=16)
 
     plt.tight_layout()
@@ -102,6 +103,8 @@ def visualize_temporal_stack_rgb(temporal_stack):
         ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
         ax.set_title(acquisition_date, fontsize=10)
         # ax.axis("off")
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
     plt.show()
@@ -142,6 +145,9 @@ def visualize_temporal_stack_ndvi(temporal_stack):
         
         ax.imshow(ndvi, cmap='RdYlGn', vmin=-1, vmax=1)
         ax.set_title(acquisition_date, fontsize=10)
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
+
         # ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])
@@ -419,6 +425,8 @@ def visualize_temporal_stack_evi(temporal_stack):
         ax.imshow(evi, cmap='RdYlGn', vmin=-1, vmax=1)
         ax.set_title(acquisition_date, fontsize=10)
         # ax.axis("off")
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
     
     plt.tight_layout()
     plt.show()
@@ -458,6 +466,8 @@ def visualize_temporal_stack_msi(temporal_stack):
         ax.imshow(msi, cmap='coolwarm', vmin=0, vmax=2)
         ax.set_title(acquisition_date, fontsize=10)
         # ax.axis("off")
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
 
     plt.tight_layout()
     plt.show()
