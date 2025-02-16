@@ -13,10 +13,12 @@ field_size = (64, 64)
 base_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data-Temporal'
 
 #### Path to extracted Temporal images -- fields
-base_directory_temporal_train1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
-base_directory_temporal_test1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
-# base_directory_temporal_train1 = ''
-# base_directory_temporal_test1 = ''
+# base_directory_temporal_train1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
+# base_directory_temporal_test1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
+
+#### Server Paths
+base_directory_temporal_train1 = '/home/k64835/SITS-images/Data-Temporal-train5'
+base_directory_temporal_test1 = '/home/k64835/SITS-images/Data-Temporal-test1'
 
 fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
 labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
