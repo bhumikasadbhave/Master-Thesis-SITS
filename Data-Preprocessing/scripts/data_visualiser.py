@@ -72,6 +72,28 @@ def visualise_all_bands(spectral_image):
     plt.show()
 
 
+def visualise_all_bands_wo_masks(spectral_image):
+    """ Visualise the first 10 Sentinel bands in a grid - masks excluded """
+    fig, axes = plt.subplots(2, 5, figsize=(20, 10))  # Adjusted to 2 rows, 5 columns
+    for i in range(10):  # Only iterate till i=9
+        ax = axes[i // 5, i % 5]  # Adjusted to 5 images per row
+        im = ax.imshow(spectral_image[:, :, i], cmap='viridis')  
+
+        if i == 7:
+            band_name = "Sentinel Band 8A"
+        elif i == 8:
+            band_name = "Sentinel Band 11"
+        elif i == 9:
+            band_name = "Sentinel Band 12"
+        else:
+            band_name = f"Sentinel Band {i+2}"
+            
+        ax.set_title(band_name)  
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_image(image, title, cmap):
     """ Function to plot the image
     """
