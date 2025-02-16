@@ -263,7 +263,7 @@ import os
 import numpy as np
 from PIL import Image, ImageDraw
 
-def draw_diseased_patches(images_tensor, x_y_coords, save_path="output/"):
+def draw_diseased_patches1(images_tensor, x_y_coords, save_path="output/"):
     """
     Draws red rectangles on images at specified (x, y) coordinates if marked as diseased.
 
