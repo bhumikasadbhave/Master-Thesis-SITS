@@ -227,18 +227,17 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
     return accuracy, report, x_y_coords
 
 
-
-def draw_diseased_patches(dataloader, x_y_coords, save_path="output/"):
+### Test this function ### 
+def draw_diseased_patches(images_tensor, x_y_coords, save_path="output/"):
     os.makedirs(save_path, exist_ok=True)
 
-    for batch_idx, batch in enumerate(dataloader):
+    for batch_idx, batch in enumerate(images_tensor):
         images, field_ids = batch
 
         for img_idx, (img, field_id) in enumerate(zip(images, field_ids)):
             field_id = str(field_id)
 
             img = img[img_idx, :3, -1, :, :]  # Use last time step
-
             if img.shape[0] >= 3:
                 img_np = img[:3].permute(1, 2, 0).numpy() * 255
             else:
@@ -260,4 +259,51 @@ def draw_diseased_patches(dataloader, x_y_coords, save_path="output/"):
             img_pil.save(f"{save_path}/batch{batch_idx}_img{img_idx}_field_{field_id}.png")
             print(f"Saved: batch{batch_idx}_img{img_idx}_field_{field_id}.png")
 
+import os
+import numpy as np
+from PIL import Image, ImageDraw
+
+def draw_diseased_patches(images_tensor, x_y_coords, save_path="output/"):
+    """
+    Draws red rectangles on images at specified (x, y) coordinates if marked as diseased.
+
+    Parameters:
+    - images_tensor (torch.Tensor or np.ndarray): Tensor of shape (N, T, H, W, C)
+      where:
+        N = Number of images
+        T = Time steps
+        H = Height
+        W = Width
+        C = Channels
+    - x_y_coords (dict): Dictionary with (x, y) tuples as keys and 1 as value if diseased.
+    - save_path (str): Directory to save images.
+    """
+    os.makedirs(save_path, exist_ok=True)
+
+    num_images = images_tensor.shape[0]
+
+    for img_idx in range(num_images):
+        img = images_tensor[img_idx, -1, :, :, :3]  # Use last time step & first 3 channels (RGB)
+
+        if isinstance(img, np.ndarray):  # If already numpy array
+            img_np = img
+        else:  # Convert from torch tensor
+            img_np = img.permute(1, 2, 0).cpu().numpy() * 255
+        
+        img_np = img_np.astype(np.uint8)
+        img_pil = Image.fromarray(img_np)
+        draw = ImageDraw.Draw(img_pil)
+
+        # Get spatial coordinates (assuming x_y_coords are pixel positions in the image)
+        for (x, y), is_diseased in x_y_coords.items():
+            if is_diseased == 1:
+                rect_size = 5
+                top_left = (x - rect_size // 2, y - rect_size // 2)
+                bottom_right = (x + rect_size // 2, y + rect_size // 2)
+                draw.rectangle([top_left, bottom_right], outline="red", width=2)
+
+        # Save the image
+        save_filename = f"{save_path}/img_{img_idx}.png"
+        img_pil.save(save_filename)
+        print(f"Saved: {save_filename}")
 

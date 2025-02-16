@@ -160,3 +160,26 @@ def visualize_indices(indices):
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_loss(train_loss, test_loss, title="Training vs Test Loss"):
+    """
+    Plots training and test loss over epochs.
+
+    Parameters:
+    - train_loss (list): List of training loss values.
+    - test_loss (list): List of test/validation loss values.
+    - title (str): Title of the plot (default: "Training vs Test Loss").
+    """
+    epochs = list(range(1, len(train_loss) + 1))  # Generate epoch numbers
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(epochs, train_loss, label='Train Loss', linestyle='-')
+    plt.plot(epochs, test_loss, label='Test Loss', linestyle='-')
+
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
