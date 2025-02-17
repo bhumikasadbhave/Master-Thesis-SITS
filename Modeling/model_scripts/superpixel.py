@@ -316,7 +316,7 @@ import numpy as np
 import os
 from matplotlib import lines
 
-def draw_diseased_patches2(temporal_images, x_y_coords, save_path="output/", brightness_factor=1.5):
+def draw_diseased_patches2(temporal_images, x_y_coords, patch_size=5, save_path="output/"):
     os.makedirs(save_path, exist_ok=True)
 
     for img_idx in range(len(temporal_images)):
@@ -354,7 +354,7 @@ def draw_diseased_patches2(temporal_images, x_y_coords, save_path="output/", bri
         for coord_key, is_diseased in x_y_coords.items():
             coord_field_num, (x, y) = coord_key  
             if is_diseased == 1 and field_id in coord_field_num:
-                rect_size = 5
+                rect_size = patch_size
                 x_min = x - 1
                 y_min = y - 1
                 x_max = x_min + rect_size
