@@ -19,12 +19,15 @@ base_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/M
 #### Server Paths
 base_directory_temporal_train1 = '/home/k64835/SITS-images/Data-Temporal-train5'
 base_directory_temporal_test1 = '/home/k64835/SITS-images/Data-Temporal-test1'
+save_path = '/home/k64835/SITS-images/output/'
+labels_path = '/home/k64835/SITS-images/labels.csv'
+
 
 fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
-labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
+# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 trained_models_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Modeling/Trained_Models/'
 
-patch_to_field_threshold = 0.1
+patch_to_field_threshold = 0.2
 
 temporal_stack_size = 7
 # temporal_points_old = [
