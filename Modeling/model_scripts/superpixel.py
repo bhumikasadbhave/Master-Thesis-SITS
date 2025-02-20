@@ -13,6 +13,10 @@ import torch
 import cv2
 from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from matplotlib import lines
 
 
 def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
@@ -235,7 +239,7 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
 def draw_diseased_patches(temporal_images, x_y_coords, save_path="output/"):
     os.makedirs(save_path, exist_ok=True)
 
-    for batch_idx, batch in enumerate(images_tensor):
+    for batch_idx, batch in enumerate(temporal_images):
         images, field_ids = batch
 
         for img_idx, (img, field_id) in enumerate(zip(images, field_ids)):
@@ -262,7 +266,6 @@ def draw_diseased_patches(temporal_images, x_y_coords, save_path="output/"):
 
             img_pil.save(f"{save_path}/batch{batch_idx}_img{img_idx}_field_{field_id}.png")
             print(f"Saved: batch{batch_idx}_img{img_idx}_field_{field_id}.png")
-
 
 
 def draw_diseased_patches1(temporal_images, x_y_coords, save_path="output/", brightness_factor=1.5):
@@ -309,12 +312,6 @@ def draw_diseased_patches1(temporal_images, x_y_coords, save_path="output/", bri
         img_pil.save(save_filename)
         print(f"Saved: {save_filename}")
 
-
-
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-from matplotlib import lines
 
 def draw_diseased_patches2(temporal_images, x_y_coords, patch_size=5, save_path="output/"):
     os.makedirs(save_path, exist_ok=True)
