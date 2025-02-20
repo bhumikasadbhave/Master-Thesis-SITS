@@ -9,6 +9,10 @@ import cv2
 from torchvision import transforms
 from PIL import Image, ImageDraw
 import os
+import torch
+import cv2
+from PIL import Image, ImageDraw
+import matplotlib.pyplot as plt
 
 
 def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
@@ -210,7 +214,7 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
         for field_id in field_ids:
             updated_test_field_labels[str(int(float(field_id)))] = label
         
-        x_y_coords[(int(float(x)), int(float(y)))] = label
+        x_y_coords[field_number, (int(float(x)), int(float(y)))] = label
 
     y_pred = []
     y_true = []
@@ -227,18 +231,17 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
     return accuracy, report, x_y_coords
 
 
-
-def draw_diseased_patches(dataloader, x_y_coords, save_path="output/"):
+### Test this function ### 
+def draw_diseased_patches(temporal_images, x_y_coords, save_path="output/"):
     os.makedirs(save_path, exist_ok=True)
 
-    for batch_idx, batch in enumerate(dataloader):
+    for batch_idx, batch in enumerate(images_tensor):
         images, field_ids = batch
 
         for img_idx, (img, field_id) in enumerate(zip(images, field_ids)):
             field_id = str(field_id)
 
             img = img[img_idx, :3, -1, :, :]  # Use last time step
-
             if img.shape[0] >= 3:
                 img_np = img[:3].permute(1, 2, 0).numpy() * 255
             else:
@@ -260,4 +263,113 @@ def draw_diseased_patches(dataloader, x_y_coords, save_path="output/"):
             img_pil.save(f"{save_path}/batch{batch_idx}_img{img_idx}_field_{field_id}.png")
             print(f"Saved: batch{batch_idx}_img{img_idx}_field_{field_id}.png")
 
+
+
+def draw_diseased_patches1(temporal_images, x_y_coords, save_path="output/", brightness_factor=1.5):
+    os.makedirs(save_path, exist_ok=True)
+
+    for img_idx in range(len(temporal_images)):
+        img = temporal_images[img_idx][-1][:, :, :3]  
+        
+        if isinstance(img, torch.Tensor):
+            img_np = img.cpu().numpy()
+        else:
+            img_np = img
+
+        if img_np.max() <= 1.0:
+            img_np = (img_np * 255).astype(np.uint8)
+        else:
+            img_np = img_np.astype(np.uint8)
+
+
+        rgb_image = np.stack([img_np[..., 2], img_np[..., 1], img_np[..., 0]], axis=-1)  # RGB
+        rgb_image = np.clip(rgb_image / np.max(rgb_image), 0, 1)  
+        img_pil = Image.fromarray((rgb_image * 255).astype(np.uint8))
+
+        # plt.imshow(rgb_image)
+        # plt.show()
+
+        field_id_channel = temporal_images[img_idx][-1][:, :, -2]
+        unique_field_ids = np.unique(field_id_channel)
+        unique_field_ids = unique_field_ids[unique_field_ids != 0]
+        if len(unique_field_ids) == 0:
+            continue  
+        field_id = str(int(unique_field_ids[0]))
+
+        draw = ImageDraw.Draw(img_pil)
+        for coord_key, is_diseased in x_y_coords.items():
+            coord_field_num, (x, y) = coord_key  
+            if is_diseased == 1 and field_id in coord_field_num:
+                rect_size = 5
+                top_left = (y, x)
+                bottom_right = (y + rect_size, x + rect_size)
+                draw.rectangle([top_left, bottom_right], outline="red", width=1)
+
+        save_filename = os.path.join(save_path, f"img_{field_id}.png")
+        img_pil.save(save_filename)
+        print(f"Saved: {save_filename}")
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from matplotlib import lines
+
+def draw_diseased_patches2(temporal_images, x_y_coords, patch_size=5, save_path="output/"):
+    os.makedirs(save_path, exist_ok=True)
+
+    for img_idx in range(len(temporal_images)):
+        img = temporal_images[img_idx][-1][:, :, :3]  # Extract first 3 channels (BGR)
+        
+        if isinstance(img, torch.Tensor):
+            img_np = img.cpu().numpy()
+        else:
+            img_np = img
+
+        if img_np.max() <= 1.0:
+            img_np = (img_np * 255).astype(np.uint8)
+        else:
+            img_np = img_np.astype(np.uint8)
+
+        # Convert BGR to RGB
+        rgb_image = np.stack([img_np[..., 2], img_np[..., 1], img_np[..., 0]], axis=-1)  # RGB
+        rgb_image = np.clip(rgb_image / np.max(rgb_image), 0, 1)  # Normalize the image
+
+        # Create a figure and axis for displaying the image
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.imshow(rgb_image)
+        ax.axis("off")  # Hide axis
+
+        field_id_channel = temporal_images[img_idx][-1][:, :, -2]
+        unique_field_ids = np.unique(field_id_channel)
+        unique_field_ids = unique_field_ids[unique_field_ids != 0]
+
+        if len(unique_field_ids) == 0:
+            continue  
+
+        field_id = str(int(unique_field_ids[0]))
+
+        # Use Matplotlib Line2D for drawing thin lines (simulating thinner rectangles)
+        for coord_key, is_diseased in x_y_coords.items():
+            coord_field_num, (x, y) = coord_key  
+            if is_diseased == 1 and field_id in coord_field_num:
+                rect_size = patch_size
+                x_min = x - 1
+                y_min = y - 1
+                x_max = x_min + rect_size
+                y_max = y_min + rect_size
+                
+                # Draw thin lines on each side of the rectangle
+                ax.add_line(lines.Line2D([y_min, y_min], [x_min, x_max], color='red', linewidth=1))
+                ax.add_line(lines.Line2D([y_min, y_max], [x_max, x_max], color='red', linewidth=1))
+                ax.add_line(lines.Line2D([y_max, y_max], [x_max, x_min], color='red', linewidth=1))
+                ax.add_line(lines.Line2D([y_max, y_min], [x_min, x_min], color='red', linewidth=1))
+
+        # Save the image with thin rectangles (using matplotlib)
+        save_filename = os.path.join(save_path, f"img_{field_id}.png")
+        plt.savefig(save_filename, bbox_inches='tight', pad_inches=0, transparent=True)
+        plt.close(fig)  # Close the figure after saving to release resources
+
+        print(f"Saved: {save_filename}")
 
