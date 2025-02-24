@@ -30,3 +30,18 @@ def extract_features(model, dataloader, device):
     return torch.cat(features_list, dim=0), field_numbers_all
 
 
+# 2. ConvLSTM for Spatiotemporal Feature Extraction
+class ConvLSTMFeatureExtractor(nn.Module):
+    def __init__(self, input_channels=10, hidden_dim=64, kernel_size=3, num_layers=2):
+        super().__init__()
+        self.convlstm = nn.LSTM(input_size=input_channels * 5 * 5, 
+                                hidden_size=hidden_dim, 
+                                num_layers=num_layers, 
+                                batch_first=True)
+    
+    def forward(self, x):
+        batch, time_steps, channels, height, width = x.shape
+        x = x.view(batch, time_steps, -1)
+        
+        output, (hn, cn) = self.convlstm(x)
+        return hn[-1]  # Return last hidden state as feature representation
