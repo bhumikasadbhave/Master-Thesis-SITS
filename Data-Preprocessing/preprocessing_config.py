@@ -8,6 +8,7 @@ sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER
 
 #Size of individual patches/fields - all extracted sugar-beet fields will be scaled to this size
 field_size = (64, 64)
+patch_size = 5
 
 #Path to the base directory where image patches of extracted fields are to be saved
 base_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data-Temporal'
