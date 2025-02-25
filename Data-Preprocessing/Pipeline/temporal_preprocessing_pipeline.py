@@ -45,7 +45,7 @@ class PreProcessingPipelineTemporal:
 
         # Step 3: Extract patches from the masked temporal images # this will be step 3
         fields = extract_fields_temporal(masked_images, self.field_size)
-        print(f"Extracted {len(temporal_stack_patches)} patches from temporal images.")
+        print(f"Extracted {len(fields)} patches from temporal images.")
 
         # Setp 4: Refine the temporal stack
         refined_fields = refine_temporal_stack_raw(fields, self.temporal_stack_size, self.date_ranges)
@@ -94,7 +94,7 @@ class PreProcessingPipelineTemporal:
         return field_numbers, dataloader_train
 
 
-    def get_processed_testloader(self, batch_size):
+    def get_processed_testloader(self, bands, batch_size):
         
         temporal_images_test = load_field_images_temporal(config.base_directory_temporal_test)
         border_removed_images_test = blacken_field_borders_temporal(temporal_images_test)
