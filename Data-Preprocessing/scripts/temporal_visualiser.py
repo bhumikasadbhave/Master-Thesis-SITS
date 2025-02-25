@@ -45,8 +45,6 @@ def visualize_temporal_differences(temporal_differences):
     plt.show()
 
 
-import matplotlib.pyplot as plt
-
 def visualise_selected_bands(spectral_image):
     """ Visualise specific Sentinel bands: 0 (Blue), 2 (Red), 6 (NIR), 8 (SWIR1) """
     selected_bands = [0, 2, 6, 8]
@@ -64,8 +62,6 @@ def visualise_selected_bands(spectral_image):
 
     plt.tight_layout()
     plt.show()
-
-
 
 
 ###### Functions for visualising indices ######

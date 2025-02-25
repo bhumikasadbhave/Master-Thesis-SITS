@@ -126,7 +126,7 @@ def indexbands_temporal_cubes(temporal_images, index_name):
 
 
 def multiple_indices_temporal_cubes(temporal_images):
-    """ Create temporal cubes with multiple indices """
+    """ Create temporal cubes with multiple indices (MVI) """
     np.seterr(divide='ignore', invalid='ignore')
     indices = []
     field_numbers = []
@@ -182,7 +182,7 @@ def multiple_indices_temporal_cubes(temporal_images):
 
 
 def multiple_indices_bands_temporal_cubes(temporal_images):
-    """ Create temporal cubes with multiple indices and relevant bands """
+    """ Create temporal cubes with multiple indices and relevant bands (BVI) """
     np.seterr(divide='ignore', invalid='ignore')
     cubes = []
     field_numbers = []
@@ -266,7 +266,7 @@ def relevantbands_temporal_cubes(temporal_images):
 
 
 def allbands_temporal_cubes(temporal_images):
-    """ Create temporal cubes with all Sentinel bands excluding masks """
+    """ Create temporal cubes with all Sentinel bands excluding masks (B10) """
     cubes = []
     field_numbers = []
     field_idx=0
@@ -397,12 +397,10 @@ def temporal_differences_with_time(temporal_images, index_name):
         # 4. Calculate the time differences between consecutive images in days
         time_diffs = [convert_date_to_days(date) for date in acquisition_dates]
         time_diffs = np.diff(time_diffs)  
-        # print('time diff', time_diffs)
         
         # 6. Compute differences in NDVI (or other index) between consecutive images
         temporal_indices = np.array(temporal_indices)  
         differences = np.diff(temporal_indices, axis=0)  
-        # print('index diff', np.unique(differences[0]))
         
         # 7. Normalize the differences by the time interval
         normalized_differences = []
@@ -416,7 +414,6 @@ def temporal_differences_with_time(temporal_images, index_name):
             normalized_differences.append(diff_norm)
         
         indices.append(normalized_differences)
-        # print('norm diff', np.unique(normalized_differences[0]))
     
     return indices
 
@@ -428,8 +425,8 @@ def convert_date_to_days(date_str):
     return (date_obj - datetime(1970, 1, 1)).days
 
 
-############ Baseline #############
-# Refine september images for Baseline -- Keep IMP Bands only 0,1,2,3,8,9
+############ Non-temporal Images Channel Refinement #############
+# Refine september images -- Keep IMP Bands only 0,1,2,3,8,9
 def refine_chanel_non_temporal(images):
 
     refined_images = []
