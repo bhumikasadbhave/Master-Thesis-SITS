@@ -20,7 +20,44 @@ from datetime import datetime
  
 # all sentinel bands - just remove the masks and keep all sentinel bands
 
-#### code ####
+def rgb_temporal_cubes(temporal_images):
+    """ Create temporal cubes with all Sentinel bands excluding masks """
+    cubes = []
+    field_numbers = []
+    acquisition_dates = {}
+    field_idx=0
+    for temporal_stack in temporal_images:
+        temporal_cubes = []
+        dates = []
+
+        #Get field number
+        id_mask = temporal_stack[0][..., 11]                   # field_id
+        field_number = np.unique(id_mask)
+        field_number = field_number[field_number != 0]  
+
+        if len(field_number) > 1:
+            combined_field_no = '_'.join(map(str, sorted(field_number)))
+        elif len(field_number) == 1:
+            combined_field_no = str(field_number[0])
+        else:
+            combined_field_no = f'{field_idx}' 
+        field_numbers.append(combined_field_no)
+
+        for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
+            sentinel_bands = image[..., [0, 1, 2]]  # Exclude masks (Channels 10, 11, 12)
+            temporal_cubes.append(sentinel_bands)
+            dates.append(date_unique)
+        field_idx+=1
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
+
 
 def indexonly_temporal_cubes(temporal_images, index_name):
     """ Create temporal cubes with only the specified vegetation index """

@@ -11,15 +11,15 @@ field_size = (64, 64)
 patch_size = 5
 
 #Path to the base directory where image patches of extracted fields are to be saved
-base_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data-Temporal'
+save_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data-Temporal'
 
 #### Path to extracted Temporal images -- fields
 # base_directory_temporal_train1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
 # base_directory_temporal_test1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
 
 #### Server Paths
-base_directory_temporal_train1 = '/home/k64835/SITS-images/Data-Temporal-train5'
-base_directory_temporal_test1 = '/home/k64835/SITS-images/Data-Temporal-test1'
+load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
+load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
 save_path = '/home/k64835/SITS-images/output/'
 labels_path = '/home/k64835/SITS-images/labels.csv'
 

@@ -23,7 +23,9 @@ class PreProcessingPipelineTemporal:
 
         #Get values from Config file
         self.sentinel_base_path = config.sentinel_base_path
-        self.fields_base_directory_temporal = config.base_directory_temporal
+        self.save_dir = config.save_directory_temporal
+        self.load_train_dir = config.load_directory_temporal_train
+        self.load_eval_dir = config.load_directory_temporal_eval
         self.field_size = config.field_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
@@ -51,9 +53,9 @@ class PreProcessingPipelineTemporal:
         refined_fields = refine_temporal_stack_interval5(fields, self.temporal_stack_size, self.date_ranges)
 
         # Step 5: Define the base directory to save patches
-        fields_base_directory = config.base_directory_temporal
+        fields_base_directory = config.save_directory_temporal
 
-        # Step 7: Save the patches to disk in their respective temporal folders
+        # Step 6: Save the patches to disk in their respective temporal folders
         print("Saving patches to disk...")
         success = save_field_images_temporal(fields_base_directory, refined_fields)
         if success:
@@ -70,17 +72,16 @@ class PreProcessingPipelineTemporal:
         Returns image tensor and field numbers.
         
         Parameters:
-            dataset_type (str): 'train' or 'test' to specify dataset.
-            batch_size (int): Batch size for loading the data.
+            dataset_type (str): 'train' or 'eval' to specify dataset.
             bands (str): Type of band selection method.
             vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
         """
 
         # Step 1: Load the saved patches from the file system
         if dataset_type == 'train':
-            temporal_images = load_field_images_temporal(config.base_directory_temporal_train1)
-        elif dataset_type == 'test':
-            temporal_images = load_field_images_temporal(config.base_directory_temporal_test1)
+            temporal_images = load_field_images_temporal(self.load_train_dir)
+        elif dataset_type == 'eval':
+            temporal_images = load_field_images_temporal(self.load_eval_dir)
         else:
             raise ValueError("dataset_type must be either 'train' or 'test'")
 
