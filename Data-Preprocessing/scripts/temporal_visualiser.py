@@ -66,6 +66,43 @@ def visualise_selected_bands(spectral_image):
 
 ###### Functions for visualising indices ######
 
+def visualize_temporal_stack_rgb1(temporal_stack, dates):
+    """
+    Visualize all images in a single temporal stack with RGB channels and acquisition dates as titles.
+    Args: temporal_stack (list): A single temporal stack (7), image - (H, W, C), last channel - acquisition dates in yyyymmdd.0
+    """
+    if len(temporal_stack) != 7:
+        print(f"The provided temporal stack has {len(temporal_stack)} images, expected 7.")
+        return
+
+    fig, axes = plt.subplots(1, 7, figsize=(20, 5))
+    fig.suptitle("Temporal Stack Visualization (RGB)", fontsize=16)
+    
+    for i, ax in enumerate(axes):
+        image = temporal_stack[i]
+        date = dates[i]
+        
+        if len(date) > 0:
+            int_date = int(float(date)) # yyyymmdd.0
+            year = int_date // 10000
+            month = (int_date // 100) % 100
+            day = int_date % 100
+            acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
+        else:
+            acquisition_date = "No Date"
+        
+        # Visualize RGB 
+        rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB
+        ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
+        ax.set_title(acquisition_date, fontsize=10)
+        # ax.axis("off")
+        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
+        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
+    plt.show()
+
+
 def visualize_temporal_stack_rgb(temporal_stack):
     """
     Visualize all images in a single temporal stack with RGB channels and acquisition dates as titles.

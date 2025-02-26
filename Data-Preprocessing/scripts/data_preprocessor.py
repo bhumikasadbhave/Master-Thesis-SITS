@@ -59,7 +59,7 @@ def extract_fields(images, patch_size):
             min_row, min_col, max_row, max_col = region.bbox         #Bounding Box
             patch = image[min_row:max_row, min_col:max_col, :]       #Extract patch
 
-            #Padding to make all patches - (50 x 50)
+            #Padding to make all patches - (patch_size x patch_size)
             height, width, channels = patch.shape
             pad_height = max(0, patch_size[0] - height)
             pad_width = max(0, patch_size[1] - width)

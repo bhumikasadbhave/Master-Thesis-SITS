@@ -23,13 +23,15 @@ from datetime import datetime
 #### code ####
 
 def indexonly_temporal_cubes(temporal_images, index_name):
-    """ Create temporal cubes with only the specified index """
+    """ Create temporal cubes with only the specified vegetation index """
     np.seterr(divide='ignore', invalid='ignore')
     indices = []
     field_numbers = []
-
+    acquisition_dates = {}
+    field_idx = 0
     for temporal_stack in temporal_images:
         temporal_indices = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -44,8 +46,13 @@ def indexonly_temporal_cubes(temporal_images, index_name):
             combined_field_no = f'{field_idx}' 
         field_numbers.append(combined_field_no)
 
-
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             nir = image[..., 6]
             red = image[..., 2]
             blue = image[..., 0]
@@ -66,8 +73,11 @@ def indexonly_temporal_cubes(temporal_images, index_name):
             index = np.nan_to_num(index, nan=0.0)
             index = (index - np.min(index)) / (np.max(index) - np.min(index) + 1e-6)
             temporal_indices.append(index)
+            dates.append(date_unique)
+        field_idx+=1
+        acquisition_dates[combined_field_no] = dates
         indices.append(temporal_indices)
-    return field_numbers, indices
+    return field_numbers, acquisition_dates, indices
 
 
 def indexbands_temporal_cubes(temporal_images, index_name):
@@ -75,9 +85,11 @@ def indexbands_temporal_cubes(temporal_images, index_name):
     np.seterr(divide='ignore', invalid='ignore')
     cubes = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx = 0
     for temporal_stack in temporal_images:
         temporal_cubes = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -93,6 +105,12 @@ def indexbands_temporal_cubes(temporal_images, index_name):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             nir = image[..., 6]
             red = image[..., 2]
             blue = image[..., 0]
@@ -120,9 +138,11 @@ def indexbands_temporal_cubes(temporal_images, index_name):
 
             #relevant_bands = image[..., [0, 1, 2, 6, 8]]  # Blue, Green, Red, NIR, SWIR
             temporal_cubes.append(np.dstack((index, relevant_bands)))
-            field_idx += 1 
+            dates.append(date_unique)
+        field_idx+=1
+        acquisition_dates[combined_field_no] = dates
         cubes.append(temporal_cubes)
-    return field_numbers, cubes
+    return field_numbers, acquisition_dates, indices
 
 
 def multiple_indices_temporal_cubes(temporal_images):
@@ -130,9 +150,11 @@ def multiple_indices_temporal_cubes(temporal_images):
     np.seterr(divide='ignore', invalid='ignore')
     indices = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx = 0
     for temporal_stack in temporal_images:
         temporal_indices = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -148,6 +170,12 @@ def multiple_indices_temporal_cubes(temporal_images):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             nir = image[..., 6]
             red = image[..., 2]
             blue = image[..., 0]
@@ -175,10 +203,12 @@ def multiple_indices_temporal_cubes(temporal_images):
 
             # temporal_indices.append(np.dstack((ndvi, msi, ci, evi)))
             temporal_indices.append(np.dstack((ndvi, msi, evi)))
-        
+            dates.append(date_unique)
+
         field_idx+=1
+        acquisition_dates[combined_field_no] = dates
         indices.append(temporal_indices)
-    return field_numbers, indices
+    return field_numbers, acquisition_dates, indices
 
 
 def multiple_indices_bands_temporal_cubes(temporal_images):
@@ -186,9 +216,11 @@ def multiple_indices_bands_temporal_cubes(temporal_images):
     np.seterr(divide='ignore', invalid='ignore')
     cubes = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx = 0
     for temporal_stack in temporal_images:
         temporal_cubes = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -204,6 +236,12 @@ def multiple_indices_bands_temporal_cubes(temporal_images):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             nir = image[..., 6]
             red = image[..., 2]
             blue = image[..., 0]
@@ -231,18 +269,22 @@ def multiple_indices_bands_temporal_cubes(temporal_images):
             relevant_bands = image[..., [0, 2, 6, 8]]  # Blue, Red, NIR, SWIR
             # temporal_cubes.append(np.dstack((ndvi, msi, ci, evi, relevant_bands)))
             temporal_cubes.append(np.dstack((ndvi, msi, evi, relevant_bands)))
-        cubes.append(temporal_cubes)
+            dates.append(date_unique)
         field_idx+=1
-    return field_numbers, cubes
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
 
 
 def relevantbands_temporal_cubes(temporal_images):
     """ Create temporal cubes with all Sentinel bands excluding masks """
     cubes = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx=0
     for temporal_stack in temporal_images:
         temporal_cubes = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -258,20 +300,30 @@ def relevantbands_temporal_cubes(temporal_images):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             sentinel_bands = image[..., [0, 1, 2, 3, 8, 9]]  # Exclude masks (Channels 10, 11, 12)
             temporal_cubes.append(sentinel_bands)
-        cubes.append(temporal_cubes)
+            dates.append(date_unique)
         field_idx+=1
-    return field_numbers, cubes
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
 
 
 def allbands_temporal_cubes(temporal_images):
     """ Create temporal cubes with all Sentinel bands excluding masks (B10) """
     cubes = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx=0
     for temporal_stack in temporal_images:
         temporal_cubes = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -287,11 +339,19 @@ def allbands_temporal_cubes(temporal_images):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             sentinel_bands = image[..., :10]  # Exclude masks (Channels 10, 11, 12)
             temporal_cubes.append(sentinel_bands)
-        cubes.append(temporal_cubes)
+            dates.append(date_unique)
         field_idx+=1
-    return field_numbers, cubes
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
 
 
 def multiple_indices_allbands_temporal_cubes(temporal_images):
@@ -299,9 +359,11 @@ def multiple_indices_allbands_temporal_cubes(temporal_images):
     np.seterr(divide='ignore', invalid='ignore')
     cubes = []
     field_numbers = []
+    acquisition_dates = {}
     field_idx = 0
     for temporal_stack in temporal_images:
         temporal_cubes = []
+        dates = []
 
         #Get field number
         id_mask = temporal_stack[0][..., 11]                   # field_id
@@ -317,6 +379,12 @@ def multiple_indices_allbands_temporal_cubes(temporal_images):
         field_numbers.append(combined_field_no)
 
         for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
             nir = image[..., 6]
             red = image[..., 2]
             blue = image[..., 0]
@@ -344,9 +412,11 @@ def multiple_indices_allbands_temporal_cubes(temporal_images):
             relevant_bands = image[..., :10]  # Blue, Green, Red, NIR, SWIR
             # temporal_cubes.append(np.dstack((ndvi, msi, ci, evi, relevant_bands)))
             temporal_cubes.append(np.dstack((ndvi, msi, evi, relevant_bands)))
-        cubes.append(temporal_cubes)
+            dates.append(date_unique)
         field_idx+=1
-    return field_numbers, cubes
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
 
 
 ############ NDVI Differences #############

@@ -2,7 +2,7 @@ from scripts.data_loader import *
 from scripts.data_preprocessor import *
 from scripts.data_visualiser import *
 from scripts.preprocess_helper import *
-import preprocessing_config as config
+import config as config
 
 class PreProcessingPipeline:
 
