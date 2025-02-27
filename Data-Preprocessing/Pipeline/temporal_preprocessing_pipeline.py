@@ -14,7 +14,7 @@ from model_scripts.get_statistics import *
 from model_scripts.dataset_creation import *
 from model_scripts.train_model_ae import *
 from model_scripts.model_visualiser import *
-from Pipeline.pre_processing_pipeline import *
+from Pipeline.temporal_preprocessing_pipeline import *
 
 
 class PreProcessingPipelineTemporal:
@@ -26,7 +26,7 @@ class PreProcessingPipelineTemporal:
         self.save_dir = config.save_directory_temporal
         self.load_train_dir = config.load_directory_temporal_train
         self.load_eval_dir = config.load_directory_temporal_eval
-        self.field_size = config.field_size
+        self.field_size = config.patch_field_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
 
@@ -108,6 +108,7 @@ class PreProcessingPipelineTemporal:
 
         # Step 4: Return Temporal Cubes
         image_tensor = np.stack(indices_images)
+        image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3)
         
         return field_numbers, acquisition_dates, image_tensor
 

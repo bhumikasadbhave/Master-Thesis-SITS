@@ -81,14 +81,14 @@ def visualize_single_patch_temporal_rgb(patch, patch_coordinates, patch_size=5, 
     plt.show()
 
 
-def visualize_patches(image_data, field_numbers_test, patch_coordinates, field_index, patch_size=5):
+def visualize_subpatches(image_data, field_numbers_test, patch_coordinates, field_index, patch_size=5):
 
     num_of_img_train, t, channels, height, width = image_data.shape
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     img = image_data[field_index, -1, 0].cpu().numpy()
     img_fn = field_numbers_test[field_index]
     ax.imshow(img, cmap='gray')
-    ax.set_title(f"Field {field_index}, Last Time Step")
+    ax.set_title(f"Subpatch-Patch Mapping")
     ax.axis("off")
     for field_number, i, j in patch_coordinates:
         if field_number == img_fn:

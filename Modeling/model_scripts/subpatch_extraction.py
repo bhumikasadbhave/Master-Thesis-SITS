@@ -43,7 +43,7 @@ def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
                     patches.append(patch1)
                     patch_coordinates.append((field_number, i, j))  
                         
-    return patches, patch_coordinates
+    return torch.stack(patches), patch_coordinates
 
 
 def save_train_predictions_to_excel(train_field_labels, file_path):
