@@ -18,7 +18,6 @@ def get_accuracy(field_numbers, labels, gt_path):
             all_numbers = number.split('_')
             for n in all_numbers:
                 field_labels[int(float(n))]=labels[i]
-
         else:
             field_labels[int(float(number))] = labels[i]
 
@@ -71,7 +70,6 @@ def resize_with_padding(images, target_height=224, target_width=224):
     for image in images:
 
         original_height, original_width, channels = image.shape
-
         pad_height = target_height - original_height
         pad_width = target_width - original_width
         assert pad_height >= 0 and pad_width >= 0, "Target size must be greater than or equal to the original size"
@@ -85,7 +83,6 @@ def resize_with_padding(images, target_height=224, target_width=224):
                             ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 
                             mode='constant', 
                             constant_values=0)
-
         padded_images.append(padded_image)
 
     return padded_images
@@ -111,7 +108,6 @@ def normalize_temporal_image(image):
     """
 
     normalized_image = np.zeros_like(image, dtype=np.float32)
-
     for channel in range(image.shape[-1]):
         channel_data = image[:, :, channel]
 

@@ -1,4 +1,4 @@
-import preprocessing_config as config
+import config as config
 from scripts.temporal_data_loader import *
 from scripts.temporal_data_preprocessor import *
 from scripts.data_visualiser import *
@@ -23,102 +23,91 @@ class PreProcessingPipelineTemporal:
 
         #Get values from Config file
         self.sentinel_base_path = config.sentinel_base_path
-        self.fields_base_directory_temporal = config.base_directory_temporal
+        self.save_dir = config.save_directory_temporal
+        self.load_train_dir = config.load_directory_temporal_train
+        self.load_eval_dir = config.load_directory_temporal_eval
         self.field_size = config.field_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
 
 
-    def run_full_preprocessing_pipeline_temporal(self):
+    def run_temporal_patch_save_pipeline(self):
         """
-        Function to run the complete preprocessing pipeline for temporal image stacks.
+        Function to run the patch-save preprocessing pipeline for temporal image stacks.
         It loads images, integrates masks, applies masking, extracts patches, and saves them.
         """
 
         # Step 1: Load Sentinel Images and Corresponding Masks
         images = load_sentinel_images_temporal(self.sentinel_base_path)
-        print(f"Loaded {len(images)} temporal image stacks, {len(sugarbeet_masks)} sugarbeet masks, and {len(id_masks)} ID masks.")
+        print(f"Loaded {len(images)} temporal images and with attached masks in them.")
 
         # Step 2: Mask images
         masked_images = mask_images_temporal(images)
         print(f"Masked {len(masked_images)} images.")
 
-        # Step 3: Extract patches from the masked temporal images # this will be step 3
+        # Step 3: Extract patches from the masked temporal images 
         fields = extract_fields_temporal(masked_images, self.field_size)
-        print(f"Extracted {len(temporal_stack_patches)} patches from temporal images.")
+        print(f"Extracted {len(fields)} patches from temporal images.")
 
-        # Setp 4: Refine the temporal stack
-        refined_fields = refine_temporal_stack_raw(fields, self.temporal_stack_size, self.date_ranges)
+        # Setp 4: Refine the temporal stack: 7 cloud-free images per patch
+        refined_fields = refine_temporal_stack_interval5(fields, self.temporal_stack_size, self.date_ranges)
 
         # Step 5: Define the base directory to save patches
-        fields_base_directory = config.fields_base_directory
+        fields_base_directory = config.save_directory_temporal
 
-        # Step 7: Save the patches to disk in their respective temporal folders
+        # Step 6: Save the patches to disk in their respective temporal folders
         print("Saving patches to disk...")
-        success = save_field_images_temporal(self.fields_base_directory_temporal, refined_fields)
+        success = save_field_images_temporal(fields_base_directory, refined_fields)
         if success:
-            print(f"Successfully saved the patches to {self.fields_base_directory_temporal}.")
+            print(f"Successfully saved the patches to {fields_base_directory}.")
         else:
             print("Failed to save the patches.")
-        
         return success
 
     
-    def get_processed_trainloader(self, batch_size, bands, vi_type='msi'):
-
-        temporal_images = load_field_images_temporal(config.base_directory_temporal_train)
-        border_removed_images_train = blacken_field_borders_temporal(temporal_images)
-
-        if bands == 'indexbands':
-            field_numbers, indices_images = indexbands_temporal_cubes(border_removed_images_train, vi_type)
+    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi'):
+        """ 
+        Generalized pipeline to load the saved field patches, remove border pixels, 
+        and get final model-ready temporal cube for both train and test data.
+        Returns image tensor and field numbers.
         
-        if bands == 'indexonly':
-            field_numbers, indices_images = indexonly_temporal_cubes(border_removed_images_train, vi_type)
+        Parameters:
+            dataset_type (str): 'train' or 'eval' to specify dataset.
+            bands (str): Type of band selection method.
+            vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
+        """
 
-        if bands == 'multipleindices':
-            field_numbers, indices_images = multiple_indices_temporal_cubes(border_removed_images_train)
+        # Step 1: Load the saved patches from the file system
+        if dataset_type == 'train':
+            temporal_images = load_field_images_temporal(self.load_train_dir)
+        elif dataset_type == 'eval':
+            temporal_images = load_field_images_temporal(self.load_eval_dir)
+        else:
+            raise ValueError("dataset_type must be either 'train' or 'test'")
 
-        if bands == 'multipleindicesbands':
-            field_numbers, indices_images = multiple_indices_bands_temporal_cubes(border_removed_images_train)
+        # Step 2: Remove the border pixels of the sugarbeet fields
+        border_removed_images = blacken_field_borders_temporal(temporal_images)
 
-        if bands == 'relevantbands':
-            field_numbers, indices_images = relevantbands_temporal_cubes(border_removed_images_train)
+        # Step 3: Select relevant Vegetation Indices and Sentinel-2 Bands
+        band_selection_methods = {
+            'indexbands': indexbands_temporal_cubes,
+            'indexonly': indexonly_temporal_cubes,
+            'relevantbands': relevantbands_temporal_cubes,
+            'multipleindices': multiple_indices_temporal_cubes,
+            'multipleindicesbands': multiple_indices_bands_temporal_cubes,
+            'allbands': allbands_temporal_cubes
+        }
 
-        if bands == 'allbands':
-            field_numbers, indices_images = allbands_temporal_cubes(border_removed_images_train)
-            
-        non_temporal_images = get_non_temporal_images(indices_images)
-        image_tensor_train = np.stack(non_temporal_images) 
-        dataloader_train = create_data_loader(image_tensor_train, field_numbers, batch_size=batch_size, shuffle=True)
+        if bands not in band_selection_methods:
+            raise ValueError(f"Invalid bands option: {bands}")
 
-        return field_numbers, dataloader_train
+        if bands in ['indexbands', 'indexonly']:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](border_removed_images, vi_type)
+        else:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](border_removed_images)
 
-
-    def get_processed_testloader(self, batch_size):
+        # Step 4: Return Temporal Cubes
+        image_tensor = np.stack(indices_images)
         
-        temporal_images_test = load_field_images_temporal(config.base_directory_temporal_test)
-        border_removed_images_test = blacken_field_borders_temporal(temporal_images_test)
+        return field_numbers, acquisition_dates, image_tensor
 
-        if bands == 'indexbands':
-            field_numbers, indices_images = indexbands_temporal_cubes(border_removed_images_test, vi_type)
-        
-        if bands == 'indexonly':
-            field_numbers, indices_images = indexonly_temporal_cubes(border_removed_images_test, vi_type)
-
-        if bands == 'multipleindices':
-            field_numbers, indices_images = multiple_indices_temporal_cubes(border_removed_images_test)
-
-        if bands == 'multipleindicesbands':
-            field_numbers, indices_images = multiple_indices_bands_temporal_cubes(border_removed_images_test)
-
-        if bands == 'relevantbands':
-            field_numbers, indices_images = relevantbands_temporal_cubes(border_removed_images_test)
-
-        if bands == 'allbands':
-            field_numbers, indices_images = allbands_temporal_cubes(border_removed_images_test)
-            
-        non_temporal_images_test = get_non_temporal_images(indices_images_test)
-        image_tensor_test = np.stack(refined_images_test) 
-        dataloader_test = create_data_loader(image_tensor_test, field_numbers_test, batch_size=batch_size, shuffle=False)
-
-        return field_numbers, dataloader_test

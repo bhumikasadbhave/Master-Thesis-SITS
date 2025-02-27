@@ -73,113 +73,11 @@ def extract_fields_temporal(images, patch_size):
 
                 # Clip the patch if it exceeds the desired size
                 padded_patch = padded_patch[:patch_size[0], :patch_size[1], :]
-                
+        
                 temporal_patch.append(padded_patch)
-
             all_patches.append(temporal_patch)
-        
         print(f"--- Processed {len(regions)} regions for scene {scene_index}")
-    
     return all_patches
-
-
-def refine_temporal_stack(temporal_stack_patches, stack_size, date_ranges):
-
-    # date_ranges = [
-    # ("early_june", "2023-06-01", "2023-06-10"),
-    # ("mid_june", "2023-06-11", "2023-06-20"),
-    # ("late_june", "2023-06-21", "2023-06-30"),
-    # ("early_july", "2023-07-01", "2023-07-10"),
-    # ("mid_july", "2023-07-11", "2023-07-20"),
-    # ("late_july", "2023-07-21", "2023-07-31"),
-    # ("early_august", "2023-08-01", "2023-08-10"),
-    # ("mid_august", "2023-08-11", "2023-08-20"),
-    # ("late_august", "2023-08-21", "2023-08-31"),
-    # ("early_september", "2023-09-01", "2023-09-10"),
-    # ]
-
-    stack_flags = np.zeros(stack_size)
-    #stack_size =  number of date ranges
-    #final_patches = []
-    #for all patches 
-        #patch_stack = []
-        #for date_range in all date ranges
-            #for all temporal images in the temporal stack of a patch
-                #if start_date <= image[12th channel values] <= end_date
-                    #if no-cloud-coverage (10th channel)
-                        #patch_stack.append(temporal image)
-                        #set flag[date_range]=1
-                        #break
-        #check if for every patch, flags is all 1. If not, discard this patch :(
-        #If yes, append the temporal stack of this patch to final_patches
-            
-
-def refine_temporal_stack_raw(temporal_stack_patches, stack_size, date_ranges):
-    """
-    Refine temporal stacks by selecting cloud-free images within specified date ranges
-    Args: temporal_stack_patches (list): List of patches, where each patch is a temporal stack of images
-                                       Each image is has 12 channels:
-                                       - 12th channel: date values in yyyymmdd.0 format
-                                       - 11th channel: sugarbeed field mask (1 indicates field, 0 no field)
-                                       - 10th channel: cloud mask (1 indicates cloud, 0 no cloud)
-        stack_size (int): Number of date ranges (should match len(date_ranges))
-        date_ranges (list): List of tuples (label, start_date, end_date) with date ranges   
-    Returns: list: Refined temporal stack patches that meet the criteria
-    """
-    final_patches = []
-    
-    for patch_stack in temporal_stack_patches:
-        patch_flags = np.zeros(stack_size)
-        refined_patch_stack = []
-        
-        for idx, (_, start_date, end_date) in enumerate(date_ranges):
-            # Convert date range strings to datetime objects
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-            date_selected = False
-            images_found = 0 #changed-range
-            
-            for temporal_image in patch_stack:
-
-                date_channel = temporal_image[..., 12]          # 13th channel: date values for sugarbeet field
-                field_mask = temporal_image[..., 11]            # 12th channel: sugar-beet field id mask
-                binary_mask = (field_mask > 0).astype(np.uint8) # Binary mask for sugar-beed fields
-                cloud_mask = temporal_image[..., 10]            # 10th channel: cloud mask
-                valid_dates = date_channel[date_channel != 0]   # Non-zero date values
-
-                if len(valid_dates) == 0:
-                    continue
-
-                int_date = int(valid_dates[0])  # Date: yyyymmdd.0
-                year = int_date // 10000
-                month = (int_date // 100) % 100
-                day = int_date % 100
-                image_date = datetime(year, month, day)
-
-                if start_date <= image_date <= end_date:  
-                    field_pixels = binary_mask == 1                          # Identify pixels corresponding to sugar-beet fields
-                    cloud_free = np.all(cloud_mask[field_pixels] == 1)        # Check if field pixels are cloud-free
-                    if cloud_free:
-                        refined_patch_stack.append(temporal_image)
-                        patch_flags[idx] = 1
-
-                        images_found += 1           # Increment valid image count
-                        if idx == 3:                # Ensure only one image for september
-                            break
-
-                        if images_found == 2:       # Stop after finding two valid images for this range
-                            patch_flags[idx+len(date_ranges)] = 1
-                            break
-
-                            
-        #if np.all(patch_flags == 1):
-        if np.all(patch_flags != 0):
-            final_patches.append(refined_patch_stack)
-        else:
-            print(f"Patch discarded: Missing images for some date ranges.")
-            print(f"Flag array was: ",patch_flags)
-    
-    return final_patches
 
 
 def refine_temporal_stack_interval5(temporal_stack_patches, stack_size, date_ranges):
@@ -199,14 +97,13 @@ def refine_temporal_stack_interval5(temporal_stack_patches, stack_size, date_ran
     for patch_stack in temporal_stack_patches:
         patch_flags = np.zeros(stack_size)
         refined_patch_stack = []
-        selected_dates = []  # To store already selected dates for this patch
+        selected_dates = []  
 
         for idx, (_, start_date, end_date) in enumerate(date_ranges):
-            # Convert date range strings to datetime objects
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
             date_selected = False
-            images_found = 0  # Number of images found for this range
+            images_found = 0  
 
             for temporal_image in patch_stack:
                 date_channel = temporal_image[..., 12]          # 13th channel: date values
@@ -253,31 +150,6 @@ def refine_temporal_stack_interval5(temporal_stack_patches, stack_size, date_ran
     return final_patches
 
 
-
-
-# Used only once: Remove Border Pixels for fields
-def blacken_field_borders_temporal_old(images):
-    """
-    Blacken the border pixels of sugarbeet fields in channels 0-9 for all temporal images based on the mask in channel 11.
-    """
-    modified_images = images.copy()  
-
-    for i in range(len(images)):  
-       
-        sugarbeet_mask = images[i][0][:, :, 11] > 0  # Same mask for all temporal images of this field
-
-        # Erode the mask to identify inner field pixels
-        eroded_mask = binary_erosion(sugarbeet_mask, structure=np.ones((3, 3)))  # Shrink field region
-        border_mask = sugarbeet_mask & ~eroded_mask      # Border pixels are the difference between the original and eroded masks
-
-        # Blacken the border pixels for all temporal images
-        for t in range(len(images[i])):  # Loop over temporal images
-            for channel in range(10):  # Channels 0 to 9
-                modified_images[i][t][:, :, channel][border_mask] = 0
-
-    return modified_images
-
-# Eroding the mask as well
 def blacken_field_borders_temporal(images):
     """
     Blacken the border pixels of sugarbeet fields in channels 0-9 for all temporal images based on the mask in channel 11.
@@ -286,14 +158,13 @@ def blacken_field_borders_temporal(images):
 
     for i in range(len(images)):  
        
-        sugarbeet_mask = images[i][0][:, :, 11] > 0  # Same mask for all temporal images of this field
+        sugarbeet_mask = images[i][0][:, :, 11] > 0  
 
         # Erode the mask to identify inner field pixels
         eroded_mask = binary_erosion(sugarbeet_mask, structure=np.ones((3, 3)))  # Shrink field region
         border_mask = sugarbeet_mask & ~eroded_mask      # Border pixels are the difference between the original and eroded masks
 
-        # Blacken the border pixels for all temporal images
-        for t in range(len(images[i])):  # Loop over temporal images
+        for t in range(len(images[i])): 
             for channel in range(10):  # Channels 0 to 9
                 modified_images[i][t][:, :, channel][border_mask] = 0
             modified_images[i][t][:, :, 11][border_mask] = 0
@@ -301,10 +172,11 @@ def blacken_field_borders_temporal(images):
     return modified_images
 
 
-
-# Get a single september image for Baseline
+# Function to get the Non-temporal instances for extracted patches. They are later used for performing preliminary test 
 def get_non_temporal_images(temporal_images):
-
+    """
+    Get a single september image as Non-temporal data 
+    """
     simple_images = []
 
     for stack in temporal_images:

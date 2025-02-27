@@ -72,14 +72,6 @@ def perform_clustering(train_features, n_clusters=2, random_state=42):
     return kmeans
 
 
-# def evaluate_clustering(kmeans, test_features, test_fields, config):
-#     """Evaluate clustering performance on the test set."""
-#     test_predictions = kmeans.predict(test_features)
-#     test_gt_aligned, test_pred_aligned = get_gt_and_pred_aligned(test_fields, test_predictions, config.labels_path)
-#     test_metrics = evaluate_clustering_metrics(test_gt_aligned, test_pred_aligned)
-#     return test_metrics
-
-
 ####### Feature Extraction for torch.geo models ########
 def extract_features_resnet(dataset, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_ALL_MOCO):
 
@@ -118,7 +110,8 @@ def extract_features_resnet_rgb(dataset, num_channels, pretrained_weights=ResNet
 
 
 
-############ Temporal feature extraction ############## change lstm to autoencoder ##############
+############ Temporal feature extraction ############## 
+############# change lstm to autoencoder ##############
 class SpatioTemporalFeatureExtractor(nn.Module):
     def __init__(self, spatial_weights, input_channels, hidden_dim=256, lstm_layers=1):
         super().__init__()
