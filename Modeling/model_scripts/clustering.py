@@ -1,6 +1,6 @@
 from sklearn.cluster import KMeans
 
-def train_kmeans_patches(train_patches, n_clusters, random_state):
+def train_kmeans_patches(train_patches, n_clusters, random_state=10):
     """Function to apply k-means to train_patches 
     (train_patches: can be image tensors or extracted feature tensors)
     """
