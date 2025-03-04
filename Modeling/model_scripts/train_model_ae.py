@@ -92,7 +92,7 @@ def extract_features_ae(model, dataloader, device='mps'):
     return torch.cat(features), field_numbers_all
 
 
-def field_nos_dataloader(patch_coordinates):
+def get_string_fielddata(patch_coordinates):
     new_coords = []
     for coord in patch_coordinates:
         field_num_coord = '_'.join(map(str, coord))  
