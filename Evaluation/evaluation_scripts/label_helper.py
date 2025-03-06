@@ -121,6 +121,34 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
 
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred)
 
-    return accuracy, report, x_y_coords
+    return accuracy, report, cm, x_y_coords
 
+
+################################ functions for DCEC #######################################
+
+def assign_field_labels_clustering(subpatch_coordinates, subpatch_predictions, threshold=0.1):
+    """
+    Assign patch/field-level labels based on sub-patch clustering predictions.
+    Returns: field_labels: Dictionary {field_number: field_label}
+    """
+    field_dict = {}
+    
+    # Assign each sub-patch to the predicted cluster (highest probability in q)
+    for field_number, prediction in zip(subpatch_coordinates, subpatch_predictions):
+        # Find the index of the highest cluster assignment probability
+        cluster_label = prediction  # Using the cluster with max probability
+        if field_number not in field_dict:
+            field_dict[field_number] = []
+        field_dict[field_number].append(cluster_label)
+
+    field_labels = {}    
+    for field_number, predictions in field_dict.items():
+        # Count the number of sub-patches that belong to the diseased cluster (cluster 1, for example)
+        diseased_subpatch_count = np.sum(np.array(predictions) == 1)  # Assuming cluster 1 is the diseased cluster
+        
+        # Assign the label based on the threshold
+        field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
+
+    return field_labels

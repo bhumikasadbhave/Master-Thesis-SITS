@@ -78,7 +78,6 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001
     return model, epoch_train_losses, epoch_test_losses
 
 
-
 def extract_features_ae(model, dataloader, device='mps'):
     features = []
     field_numbers_all = []
@@ -119,7 +118,7 @@ def apply_dbscan(features, eps=0.5, min_samples=5):
     return dbscan, predictions
 
 
-# Evaluation function only for TEST
+# Evaluation function only for eval
 def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
     df = pd.read_csv(gt_path, sep=';')
@@ -148,7 +147,7 @@ def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
 
     
-# Evaluation function only for TEST
+# Evaluation function only for evaluation set
 def evaluate_clustering_metrics(gt_aligned, pred_aligned):
     accuracy = accuracy_score(gt_aligned, pred_aligned)
     ari = adjusted_rand_score(gt_aligned, pred_aligned)
@@ -163,3 +162,211 @@ def evaluate_clustering_metrics(gt_aligned, pred_aligned):
     }
     return metrics
 
+
+### VAE functions ###
+
+def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
+    # Loss and optimizer
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    epoch_train_losses = []
+    epoch_test_losses = []
+
+    # Training loop
+    for epoch in range(epochs):
+        model.train()
+        train_loss = 0.0
+        for inputs_cpu, field_numbers in train_dataloader:
+            inputs = inputs_cpu.to(device)
+            optimizer.zero_grad()
+            
+            mu, log_var, z, reconstructed = model(inputs)
+            
+            # Compute VAE loss
+            recon_loss = criterion(reconstructed, inputs)
+            kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+            loss = recon_loss + kl_divergence
+            
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+        
+        epoch_train_losses.append(train_loss / len(train_dataloader))
+        
+        # Evaluate on the test set
+        model.eval()
+        test_loss = 0.0
+        with torch.no_grad():
+            for inputs_cpu, field_numbers in test_dataloader:
+                inputs = inputs_cpu.to(device)
+                mu, log_var, z, reconstructed = model(inputs)
+                recon_loss = criterion(reconstructed, inputs)
+                kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+                loss = recon_loss + kl_divergence
+                test_loss += loss.item()
+        
+        epoch_test_losses.append(test_loss / len(test_dataloader))
+        
+        # Print the loss for both train and test sets
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.4f}, Test Loss: {test_loss / len(test_dataloader):.4f}")
+    
+    return model, epoch_train_losses, epoch_test_losses
+
+def extract_features_vae(model, dataloader, device='mps'):
+    features = []
+    field_numbers_all = []
+    model.eval()
+    with torch.no_grad():
+        for inputs_cpu, field_numbers in dataloader:
+            inputs = inputs_cpu.to(device)
+            mu, log_var, z, _ = model(inputs)
+            features.append(z.view(z.size(0), -1))
+            field_numbers_all.extend(field_numbers)
+    return torch.cat(features), field_numbers_all
+
+
+
+### DCEC Functions ### 
+
+# def train_dcec(model, train_dataloader, epochs=10, lr=0.001, alpha=1.0, device='mps'):
+#     model.to(device)
+    
+#     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+#     mse_loss = nn.MSELoss()
+#     kl_loss = nn.KLDivLoss(reduction='batchmean')
+
+#     for epoch in range(epochs):
+#         model.train()
+#         total_reconstruction_loss = 0.0
+#         total_clustering_loss = 0.0
+        
+#         for inputs, _ in train_dataloader:
+#             inputs = inputs.to(device)
+#             optimizer.zero_grad()
+            
+#             q, reconstructed = model(inputs)
+#             target_q = (q ** 2) / q.sum(0)
+#             target_q = target_q / target_q.sum(1, keepdim=True)
+            
+#             reconstruction_loss = mse_loss(reconstructed, inputs)
+#             clustering_loss = kl_loss(q.log(), target_q.detach())
+
+#             loss = reconstruction_loss + alpha * clustering_loss
+#             loss.backward()
+#             optimizer.step()
+            
+#             total_reconstruction_loss += reconstruction_loss.item()
+#             total_clustering_loss += clustering_loss.item()
+        
+#         print(f"Epoch {epoch+1}/{epochs}, Reconstruction Loss: {total_reconstruction_loss / len(train_dataloader):.4f}, Clustering Loss: {total_clustering_loss / len(train_dataloader):.4f}")
+
+#     return model
+
+def train_dcec(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, alpha=1.0, device='mps'):
+    model.to(device)
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    mse_loss = nn.MSELoss()
+    kl_loss = nn.KLDivLoss(reduction='batchmean')
+
+    # To store the epoch losses for both train and test
+    epoch_losses = {
+        'train_reconstruction_loss': [],
+        'train_clustering_loss': [],
+        'test_reconstruction_loss': [],
+        'test_clustering_loss': []
+    }
+
+    for epoch in range(epochs):
+        # Train phase
+        model.train()
+        total_train_reconstruction_loss = 0.0
+        total_train_clustering_loss = 0.0
+        
+        for inputs, _ in train_dataloader:
+            inputs = inputs.to(device)
+            optimizer.zero_grad()
+            
+            q, reconstructed = model(inputs)
+            target_q = (q ** 2) / q.sum(0)
+            target_q = target_q / target_q.sum(1, keepdim=True)
+            
+            reconstruction_loss = mse_loss(reconstructed, inputs)
+            clustering_loss = kl_loss(q.log(), target_q.detach())
+
+            loss = reconstruction_loss + alpha * clustering_loss
+            loss.backward()
+            optimizer.step()
+            
+            total_train_reconstruction_loss += reconstruction_loss.item()
+            total_train_clustering_loss += clustering_loss.item()
+        
+        # Calculate average train losses
+        avg_train_reconstruction_loss = total_train_reconstruction_loss / len(train_dataloader)
+        avg_train_clustering_loss = total_train_clustering_loss / len(train_dataloader)
+
+        # Test phase
+        model.eval()
+        total_test_reconstruction_loss = 0.0
+        total_test_clustering_loss = 0.0
+        
+        with torch.no_grad():  
+            for inputs, _ in test_dataloader:
+                inputs = inputs.to(device)
+                
+                q, reconstructed = model(inputs)
+                target_q = (q ** 2) / q.sum(0)
+                target_q = target_q / target_q.sum(1, keepdim=True)
+                
+                reconstruction_loss = mse_loss(reconstructed, inputs)
+                clustering_loss = kl_loss(q.log(), target_q.detach())
+
+                total_test_reconstruction_loss += reconstruction_loss.item()
+                total_test_clustering_loss += clustering_loss.item()
+        
+        # Calculate average test losses
+        avg_test_reconstruction_loss = total_test_reconstruction_loss / len(test_dataloader)
+        avg_test_clustering_loss = total_test_clustering_loss / len(test_dataloader)
+
+        # Print losses for both train and test sets
+        print(f"Epoch {epoch+1}/{epochs}:")
+        print(f"  Train - Reconstruction Loss: {avg_train_reconstruction_loss:.4f}, Clustering Loss: {avg_train_clustering_loss:.4f}")
+        print(f"  Test  - Reconstruction Loss: {avg_test_reconstruction_loss:.4f}, Clustering Loss: {avg_test_clustering_loss:.4f}")
+        
+        # Store losses for each epoch
+        epoch_losses['train_reconstruction_loss'].append(avg_train_reconstruction_loss)
+        epoch_losses['train_clustering_loss'].append(avg_train_clustering_loss)
+        epoch_losses['test_reconstruction_loss'].append(avg_test_reconstruction_loss)
+        epoch_losses['test_clustering_loss'].append(avg_test_clustering_loss)
+
+    # Return the model and all epoch losses
+    return model, epoch_losses
+
+
+
+def evaluate_dcec(model, eval_dataloader, device='mps'):
+    model.to(device)
+    model.eval() 
+    
+    latent_features = []
+    cluster_assignments = []
+    field_numbers_all = []
+    
+    with torch.no_grad():
+        for inputs_cpu, field_numbers in eval_dataloader:
+            inputs = inputs_cpu.to(device)
+            
+            # Perform a forward pass to get the latent features (z) and cluster assignments (q)
+            q, _ = model(inputs)
+            
+            # Append the cluster assignments (for analysis) and latent features
+            latent_features.append(q.cpu())  # We store the cluster assignments for analysis
+            cluster_assignments.append(q.argmax(dim=1).cpu())  # Assign to the cluster with the highest probability
+            field_numbers_all.extend(field_numbers)
+    
+    # Concatenate the latent features (q)
+    latent_features = torch.cat(latent_features, dim=0)
+    cluster_assignments = torch.cat(cluster_assignments, dim=0)
+    
+    return latent_features, cluster_assignments, field_numbers_all
