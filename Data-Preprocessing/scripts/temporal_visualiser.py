@@ -4,9 +4,6 @@ from datetime import datetime
 from matplotlib.colors import ListedColormap
 from matplotlib.colors import Normalize
 
-
-
-
 ######## Visualising Temporal Cubes - Based on Index ########
 
 # RGB

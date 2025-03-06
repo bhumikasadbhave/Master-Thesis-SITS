@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import confusion_matrix
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -59,7 +60,9 @@ def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
 
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
-    return accuracy, report
+    cm = confusion_matrix(y_true, y_pred)
+    
+    return accuracy, report, cm
 
 
 ################################ functions for AE #######################################
