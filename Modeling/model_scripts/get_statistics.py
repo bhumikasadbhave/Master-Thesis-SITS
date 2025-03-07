@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import cv2
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import confusion_matrix
 
 def get_accuracy(field_numbers, labels, gt_path):
 
@@ -38,9 +40,11 @@ def get_accuracy(field_numbers, labels, gt_path):
             gt_aligned.append(1 if gt_mapping[field_number] == 'yes' else 0)
             pred_aligned.append(predicted_label)
     
-
     accuracy = correct / total if total > 0 else 0.0
-    return accuracy, pred_aligned, gt_aligned
+    report = classification_report(gt_aligned, pred_aligned)
+    cm = confusion_matrix(gt_aligned, pred_aligned)
+
+    return accuracy, report, cm, pred_aligned, gt_aligned
 
 def compute_histograms(stack, bins=10):
     """Compute histograms for a temporal stack of images.
@@ -130,3 +134,38 @@ def normalize_temporal_image(image):
             normalized_image[:, :, channel] = 0
 
     return normalized_image
+
+
+### Helper Function for getting average height and width of sugar-beet fields (for the Manuscript) ###
+
+def compute_avg_field_size_list(data_list):
+    """
+    Computes the average height and width of sugar beet fields using the field ID mask
+    Input Temporal Patches - each patch has shape (T, C, H, W)
+    """
+    field_sizes = []
+
+    for patch in data_list:  
+        last_timestep = patch[-1]     # Last temporal instance
+        mask = last_timestep[-1]      # Last channel = mask, shape
+
+        mask = (mask > 0).astype(np.uint8)
+
+        # Find connected components (fields)
+        num_labels, label_map = cv2.connectedComponents(mask)
+
+        for label_id in range(1, num_labels):  
+            field_pixels = np.argwhere(label_map == label_id)
+            if field_pixels.size > 0:
+                min_h, min_w = field_pixels.min(axis=0)
+                max_h, max_w = field_pixels.max(axis=0)
+                height = max_h - min_h + 1
+                width = max_w - min_w + 1
+                field_sizes.append((height, width))
+
+    if field_sizes:
+        avg_height = np.mean([h for h, w in field_sizes])
+        avg_width = np.mean([w for h, w in field_sizes])
+    else:
+        avg_height, avg_width = 0, 0  
+    return avg_height, avg_width

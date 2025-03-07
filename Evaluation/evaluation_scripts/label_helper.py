@@ -33,7 +33,7 @@ def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
 
 def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
     """
-    Compare predicted patch-level evaluation labels with the ground truth from a CSV file.
+    Compare predicted subpatch-level evaluation labels with the ground truth from a CSV file.
     """
     df = pd.read_csv(ground_truth_csv_path, sep=';')
     ground_truth = {

@@ -1,3 +1,4 @@
+from datetime import datetime
 import torch
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -62,11 +63,12 @@ def draw_diseased_patches(temporal_images, x_y_coords, save_path="output/", patc
         print(f"Saved: {save_filename}")
 
 
-def visualize_single_patch_temporal_rgb(patch, patch_coordinates, patch_size=5, num_of_timestamps=7):
+def visualize_single_patch_temporal_rgb(patch, patch_coordinates, acquisition_dates, patch_size=5, num_of_timestamps=7):
 
     field_number, i, j = patch_coordinates  
+    dates = acquisition_dates[field_number]
     fig, axes = plt.subplots(1, num_of_timestamps, figsize=(20, 5))
-    fig.suptitle(f"Field {field_number} - Patch ({i}, {j})", fontsize=16)
+    fig.suptitle(f"Subpatch-level Temporal Stack Visualisation (RGB) (Field {int(float(field_number))} - Subpatch ({i},{j}))", fontsize=16)
     for t in range(num_of_timestamps):
         rgb_image = np.stack([patch[t, 0], patch[t, 1], patch[t, 2]], axis=-1)  
         min_val = np.min(rgb_image)
@@ -74,9 +76,20 @@ def visualize_single_patch_temporal_rgb(patch, patch_coordinates, patch_size=5, 
         if max_val > min_val:
             rgb_image = (rgb_image - min_val) / (max_val - min_val)  
         rgb_image = np.clip(rgb_image, 0, 1)  
+
+        date = dates[t]
+        if len(date) > 0:
+            int_date = int(float(date)) # yyyymmdd.0
+            year = int_date // 10000
+            month = (int_date // 100) % 100
+            day = int_date % 100
+            acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
+        else:
+            acquisition_date = "No Date"
+
         axes[t].imshow(rgb_image, cmap='viridis') 
-        axes[t].set_title(f"Timestamp {t + 1}", fontsize=10)
-        axes[t].axis("off")
+        axes[t].set_title(f"{acquisition_date}", fontsize=10)
+        # axes[t].axis("off")
     plt.tight_layout(rect=[0, 0, 1, 0.95])  
     plt.show()
 
