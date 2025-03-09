@@ -148,7 +148,7 @@ def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
     
 # Evaluation function only for evaluation set
-def evaluate_clustering_metrics(gt_aligned, pred_aligned):
+def evaluate_clustering_metrics_old(gt_aligned, pred_aligned):
     accuracy = accuracy_score(gt_aligned, pred_aligned)
     ari = adjusted_rand_score(gt_aligned, pred_aligned)
     nmi = normalized_mutual_info_score(gt_aligned, pred_aligned)

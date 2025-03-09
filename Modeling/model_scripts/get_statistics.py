@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.metrics import confusion_matrix
+from scipy.optimize import linear_sum_assignment
 
 def get_accuracy(field_numbers, labels, gt_path):
 
@@ -46,6 +47,110 @@ def get_accuracy(field_numbers, labels, gt_path):
 
     return accuracy, report, cm, pred_aligned, gt_aligned
 
+
+def get_clustering_accuracy(field_numbers, labels, gt_path):
+    """
+    Compute classification accuracy, precision, recall, and F1-score per class using Hungarian algorithm
+    to optimally match predicted labels to ground-truth labels.
+    """
+    df = pd.read_csv(gt_path, sep=';')
+    gt_fn = df['Number'].tolist()
+    gt_label = df['Disease'].tolist()
+    gt_mapping = {int(float(gt_fn[i])): gt_label[i].strip().lower() for i in range(len(gt_fn))}
+
+    field_labels = {}
+
+    for i in range(len(field_numbers)):
+        number = field_numbers[i]
+        if '_' in number:
+            all_numbers = number.split('_')
+            for n in all_numbers:
+                field_labels[int(float(n))] = labels[i]
+        else:
+            field_labels[int(float(number))] = labels[i]
+
+    # Align ground truth and predictions
+    y_true = []
+    y_pred = []
+
+    for field_number, predicted_label in field_labels.items():
+        if field_number in gt_mapping:
+            y_true.append(1 if gt_mapping[field_number] == 'yes' else 0)
+            y_pred.append(predicted_label)
+
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+
+    # Get unique clusters and labels
+    unique_clusters = np.unique(y_pred)
+    unique_labels = np.unique(y_true)
+    num_clusters = len(unique_clusters)
+    num_labels = len(unique_labels)
+
+    # Build cost matrix for Hungarian algorithm
+    cost_matrix = np.zeros((num_clusters, num_labels))
+
+    for i, cluster in enumerate(unique_clusters):
+        for j, label in enumerate(unique_labels):
+            cost_matrix[i, j] = -np.sum((y_pred == cluster) & (y_true == label))  # Negative for maximization
+
+    # Solve assignment problem with Hungarian algorithm
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+    # Create best mapping
+    mapping = {unique_clusters[row]: unique_labels[col] for row, col in zip(row_ind, col_ind)}
+    mapped_preds = np.array([mapping[pred] for pred in y_pred])
+
+    # Compute accuracy
+    acc = np.mean(mapped_preds == y_true)
+
+    # Compute confusion matrix after mapping
+    cm = confusion_matrix(y_true, mapped_preds, labels=unique_labels)
+
+    # Compute precision, recall, and F1-score per class
+    precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
+    recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
+    f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+
+    return acc, precision_per_class, recall_per_class, f1_per_class
+
+
+
+### Helper Function for getting average height and width of sugar-beet fields (for the Manuscript) ###
+def compute_avg_field_size_list(data_list):
+    """
+    Computes the average height and width of sugar beet fields using the field ID mask
+    Input Temporal Patches - each patch has shape (T, C, H, W)
+    """
+    field_sizes = []
+
+    for patch in data_list:  
+        last_timestep = patch[-1]     # Last temporal instance
+        mask = last_timestep[-1]      # Last channel = mask, shape
+
+        mask = (mask > 0).astype(np.uint8)
+
+        # Find connected components (fields)
+        num_labels, label_map = cv2.connectedComponents(mask)
+
+        for label_id in range(1, num_labels):  
+            field_pixels = np.argwhere(label_map == label_id)
+            if field_pixels.size > 0:
+                min_h, min_w = field_pixels.min(axis=0)
+                max_h, max_w = field_pixels.max(axis=0)
+                height = max_h - min_h + 1
+                width = max_w - min_w + 1
+                field_sizes.append((height, width))
+
+    if field_sizes:
+        avg_height = np.mean([h for h, w in field_sizes])
+        avg_width = np.mean([w for h, w in field_sizes])
+    else:
+        avg_height, avg_width = 0, 0  
+    return avg_height, avg_width
+
+
+######
 def compute_histograms(stack, bins=10):
     """Compute histograms for a temporal stack of images.
     Args: stack: Array of shape (7, 64, 64, 3), temporal stack of images.
@@ -136,36 +241,3 @@ def normalize_temporal_image(image):
     return normalized_image
 
 
-### Helper Function for getting average height and width of sugar-beet fields (for the Manuscript) ###
-
-def compute_avg_field_size_list(data_list):
-    """
-    Computes the average height and width of sugar beet fields using the field ID mask
-    Input Temporal Patches - each patch has shape (T, C, H, W)
-    """
-    field_sizes = []
-
-    for patch in data_list:  
-        last_timestep = patch[-1]     # Last temporal instance
-        mask = last_timestep[-1]      # Last channel = mask, shape
-
-        mask = (mask > 0).astype(np.uint8)
-
-        # Find connected components (fields)
-        num_labels, label_map = cv2.connectedComponents(mask)
-
-        for label_id in range(1, num_labels):  
-            field_pixels = np.argwhere(label_map == label_id)
-            if field_pixels.size > 0:
-                min_h, min_w = field_pixels.min(axis=0)
-                max_h, max_w = field_pixels.max(axis=0)
-                height = max_h - min_h + 1
-                width = max_w - min_w + 1
-                field_sizes.append((height, width))
-
-    if field_sizes:
-        avg_height = np.mean([h for h, w in field_sizes])
-        avg_width = np.mean([w for h, w in field_sizes])
-    else:
-        avg_height, avg_width = 0, 0  
-    return avg_height, avg_width
