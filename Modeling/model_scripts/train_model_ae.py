@@ -289,7 +289,7 @@ def train_dcec(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, al
             optimizer.zero_grad()
             
             q, reconstructed = model(inputs)
-            target_q = (q ** 2) / q.sum(0)
+            target_q = (q ** 2) / q.sum(0, keepdim=True)
             target_q = target_q / target_q.sum(1, keepdim=True)
             
             reconstruction_loss = mse_loss(reconstructed, inputs)
@@ -316,7 +316,7 @@ def train_dcec(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, al
                 inputs = inputs.to(device)
                 
                 q, reconstructed = model(inputs)
-                target_q = (q ** 2) / q.sum(0)
+                target_q = (q ** 2) / q.sum(0, keepdim=True)
                 target_q = target_q / target_q.sum(1, keepdim=True)
                 
                 reconstruction_loss = mse_loss(reconstructed, inputs)
@@ -331,8 +331,8 @@ def train_dcec(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, al
 
         # Print losses for both train and test sets
         print(f"Epoch {epoch+1}/{epochs}:")
-        print(f"  Train - Reconstruction Loss: {avg_train_reconstruction_loss:.4f}, Clustering Loss: {avg_train_clustering_loss:.4f}")
-        print(f"  Test  - Reconstruction Loss: {avg_test_reconstruction_loss:.4f}, Clustering Loss: {avg_test_clustering_loss:.4f}")
+        print(f"  Train - Reconstruction Loss: {avg_train_reconstruction_loss:.6f}, Clustering Loss: {avg_train_clustering_loss:.6f}")
+        print(f"  Test  - Reconstruction Loss: {avg_test_reconstruction_loss:.6f}, Clustering Loss: {avg_test_clustering_loss:.6f}")
         
         # Store losses for each epoch
         epoch_losses['train_reconstruction_loss'].append(avg_train_reconstruction_loss)

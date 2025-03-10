@@ -172,6 +172,46 @@ def blacken_field_borders_temporal(images):
     return modified_images
 
 
+def normalize_images(temporal_images):
+    """
+    Normalize the Sentinel-2 temporal images such that every channel in each temporal image is scaled to [0, 1],
+    but only if it's needed (i.e., if the values are not already in the [0, 1] range).
+    """
+    normalized_images = []
+    for field_images in temporal_images:
+        field_normalized_images = []
+        
+        for temporal_image in field_images:
+            normalized_temporal_image = np.zeros_like(temporal_image, dtype=np.float32)
+            num_channels = temporal_image.shape[2]
+            
+            for c in range(num_channels): 
+
+                # Skip normalization for the last 3 channels (masks etc.)
+                if c >= num_channels - 3:
+                    normalized_temporal_image[:, :, c] = temporal_image[:, :, c]
+
+                else:
+                    band = temporal_image[:, :, c]
+                    band_min = np.min(band)
+                    band_max = np.max(band)
+                    
+                    if band_min >= 0 and band_max <= 1:
+                        # If the band is already in the [0, 1] range, don't normalize
+                        normalized_band = band
+                    else:
+                        # Normalize the band to [0, 1] range
+                        if band_max > band_min:
+                            normalized_band = (band - band_min) / (band_max - band_min)
+                        else:
+                            normalized_band = np.zeros_like(band)  # If no variance, just set to zeros
+                    normalized_temporal_image[:, :, c] = normalized_band
+                    
+            field_normalized_images.append(normalized_temporal_image)
+        normalized_images.append(field_normalized_images)
+    return normalized_images
+
+
 # Function to get the Non-temporal instances for extracted patches. They are later used for performing preliminary test 
 def get_non_temporal_images(temporal_images):
     """
