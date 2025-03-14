@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import confusion_matrix
 import torch
 import matplotlib.pyplot as plt
-import numpy as np
+from scipy.optimize import linear_sum_assignment
+
 
 
 def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
@@ -32,7 +34,7 @@ def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
 
 def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
     """
-    Compare predicted patch-level evaluation labels with the ground truth from a CSV file.
+    Compare predicted subpatch-level evaluation labels with the ground truth from a CSV file.
     """
     df = pd.read_csv(ground_truth_csv_path, sep=';')
     ground_truth = {
@@ -59,7 +61,77 @@ def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
 
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
-    return accuracy, report
+    cm = confusion_matrix(y_true, y_pred)
+    
+    return accuracy, report, cm
+
+
+
+def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
+    """
+    Evaluate clustering accuracy (ACC), precision, recall, and F1-score per class.
+    Uses the Hungarian algorithm to find the best mapping between predicted clusters and ground-truth labels.
+    """
+    df = pd.read_csv(ground_truth_csv_path, sep=';')
+    ground_truth = {
+        str(row["Number"]): row["Disease"].strip().lower()
+        for _, row in df.iterrows()
+    }
+    
+    updated_test_field_labels = {}
+    for field_number, label in test_field_labels.items():
+        if '_' in field_number:
+            split_field_numbers = field_number.split('_')
+            for split_field in split_field_numbers:
+                updated_test_field_labels[str(int(float(split_field)))] = label
+        else:
+            updated_test_field_labels[str(int(float(field_number)))] = label
+
+    y_pred = []
+    y_true = []
+
+    for field_number, predicted_label in updated_test_field_labels.items():
+        if field_number in ground_truth:
+            true_label = 1 if ground_truth[field_number] == "yes" else 0
+            y_pred.append(predicted_label)
+            y_true.append(true_label)
+
+    # Convert to numpy arrays
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+
+    # Build confusion matrix
+    unique_clusters = np.unique(y_pred)
+    unique_labels = np.unique(y_true)
+    num_clusters = len(unique_clusters)
+    num_labels = len(unique_labels)
+    
+    cost_matrix = np.zeros((num_clusters, num_labels))
+
+    for i, cluster in enumerate(unique_clusters):
+        for j, label in enumerate(unique_labels):
+            cost_matrix[i, j] = -np.sum((y_pred == cluster) & (y_true == label))
+
+    # Solve best assignment using Hungarian algorithm
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+    # Compute best cluster-label mapping
+    mapping = {unique_clusters[row]: unique_labels[col] for row, col in zip(row_ind, col_ind)}
+    mapped_preds = np.array([mapping[pred] for pred in y_pred])
+
+    # Compute clustering accuracy
+    acc = np.mean(mapped_preds == y_true)
+
+    # Compute confusion matrix after mapping
+    cm = confusion_matrix(y_true, mapped_preds, labels=unique_labels)
+
+    # Compute precision, recall, and F1-score per class
+    precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
+    recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
+    f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+    
+    return acc, precision_per_class, recall_per_class, f1_per_class
+
 
 
 ################################ functions for AE #######################################
@@ -118,6 +190,34 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
 
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred)
 
-    return accuracy, report, x_y_coords
+    return accuracy, report, cm, x_y_coords
 
+
+################################ functions for DCEC #######################################
+
+def assign_field_labels_clustering(subpatch_coordinates, subpatch_predictions, threshold=0.1):
+    """
+    Assign patch/field-level labels based on sub-patch clustering predictions.
+    Returns: field_labels: Dictionary {field_number: field_label}
+    """
+    field_dict = {}
+    
+    # Assign each sub-patch to the predicted cluster (highest probability in q)
+    for field_number, prediction in zip(subpatch_coordinates, subpatch_predictions):
+        # Find the index of the highest cluster assignment probability
+        cluster_label = prediction  # Using the cluster with max probability
+        if field_number not in field_dict:
+            field_dict[field_number] = []
+        field_dict[field_number].append(cluster_label)
+
+    field_labels = {}    
+    for field_number, predictions in field_dict.items():
+        # Count the number of sub-patches that belong to the diseased cluster (cluster 1, for example)
+        diseased_subpatch_count = np.sum(np.array(predictions) == 1)  # Assuming cluster 1 is the diseased cluster
+        
+        # Assign the label based on the threshold
+        field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
+
+    return field_labels

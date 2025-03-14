@@ -2,24 +2,23 @@ from scripts.preprocess_helper import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-def visualise_rgb(spectral_image, cmap='viridis'):
-    """ Funcrion to visulaise the Sentinel-2 spectral image as an RGB image
+def visualise_rgb(spectral_image, title="Sentinel-2 RGB Composite"):
     """
+    Visualize a single Sentinel-2 spectral image as an RGB image.
+    """
+    # Extract RGB channels (assuming BGR format)
+    rgb_image = np.stack([spectral_image[..., 2], spectral_image[..., 1], spectral_image[..., 0]], axis=-1)  # Convert BGR to RGB
 
-    bgr_image = spectral_image[..., :3]          # BGR bands 
-    normalised_image = normalise_pixels(bgr_image)
+    # Normalize for display
+    rgb_image = np.clip(rgb_image / np.max(rgb_image), 0, 1) if np.max(rgb_image) > 0 else rgb_image
 
-    gamma = 0.4          
-    gamma_corrected_image = gamma_correct(normalised_image, gamma)      # Contrast
-
-    gain = [1.2, 1.5, 1.2]       
-    brightened_image = adjust_brightness(gamma_corrected_image, gain)   # Brightness
-
-    clipped_image = np.clip(brightened_image, 0, 1)
-    clipped_image = clipped_image.astype(np.float32) 
-    rgb_image = clipped_image[..., ::-1]     # BGR to RGB
-
-    plot_image(rgb_image, "Sentinel-2 RGB Composite", cmap)
+    # Plot the image
+    plt.figure(figsize=(6, 6))
+    plt.imshow(rgb_image, cmap='viridis')
+    plt.title(title, fontsize=14)
+    plt.xticks([0, 10, 20, 30, 40, 50, 60])
+    plt.yticks([0, 10, 20, 30, 40, 50, 60])
+    plt.show()
 
 
 def visualise_single_band(spectral_image, band_index, cmap='gray'):

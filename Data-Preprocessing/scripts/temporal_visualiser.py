@@ -4,9 +4,6 @@ from datetime import datetime
 from matplotlib.colors import ListedColormap
 from matplotlib.colors import Normalize
 
-
-
-
 ######## Visualising Temporal Cubes - Based on Index ########
 
 # RGB
@@ -20,7 +17,7 @@ def visualize_temporal_stack_rgb(temporal_stack, dates):
         return
 
     fig, axes = plt.subplots(1, 7, figsize=(20, 5))
-    fig.suptitle("Temporal Stack Visualization (RGB)", fontsize=16)
+    fig.suptitle("Patch-level Temporal Stack Visualization (RGB) (Field 1168039)", fontsize=16)
     
     for i, ax in enumerate(axes):
         image = temporal_stack[i]

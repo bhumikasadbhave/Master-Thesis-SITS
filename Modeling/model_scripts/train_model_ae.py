@@ -10,7 +10,6 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
 
 
-
 def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
     
     # Loss and optimizer
@@ -50,14 +49,15 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001
         model.train()  
         train_loss = 0.0
         for inputs_cpu, field_numbers in train_dataloader:
+            
             inputs = inputs_cpu.to(device)
-            optimizer.zero_grad()
             latent, reconstructed = model(inputs)
             loss = criterion(reconstructed, inputs)
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
-        
+            optimizer.zero_grad()
+
+            train_loss += loss.item()        
         epoch_train_losses.append(train_loss / len(train_dataloader))
         
         # Evaluate on the test set
@@ -73,10 +73,9 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001
         epoch_test_losses.append(test_loss / len(test_dataloader))
         
         # Print the loss for both train and test sets
-        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.4f}, Test Loss: {test_loss / len(test_dataloader):.4f}")
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
     
     return model, epoch_train_losses, epoch_test_losses
-
 
 
 def extract_features_ae(model, dataloader, device='mps'):
@@ -92,7 +91,7 @@ def extract_features_ae(model, dataloader, device='mps'):
     return torch.cat(features), field_numbers_all
 
 
-def field_nos_dataloader(patch_coordinates):
+def get_string_fielddata(patch_coordinates):
     new_coords = []
     for coord in patch_coordinates:
         field_num_coord = '_'.join(map(str, coord))  
@@ -119,7 +118,7 @@ def apply_dbscan(features, eps=0.5, min_samples=5):
     return dbscan, predictions
 
 
-# Evaluation function only for TEST
+# Evaluation function only for eval
 def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
     df = pd.read_csv(gt_path, sep=';')
@@ -148,8 +147,8 @@ def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
 
     
-# Evaluation function only for TEST
-def evaluate_clustering_metrics(gt_aligned, pred_aligned):
+# Evaluation function only for evaluation set
+def evaluate_clustering_metrics_old(gt_aligned, pred_aligned):
     accuracy = accuracy_score(gt_aligned, pred_aligned)
     ari = adjusted_rand_score(gt_aligned, pred_aligned)
     nmi = normalized_mutual_info_score(gt_aligned, pred_aligned)
@@ -162,4 +161,92 @@ def evaluate_clustering_metrics(gt_aligned, pred_aligned):
         "Fowlkes-Mallows Index (FMI)": fmi,
     }
     return metrics
+
+
+### VAE functions ###
+
+def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
+
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    epoch_train_recon_losses = []
+    epoch_train_kl_losses = []
+    epoch_test_recon_losses = []
+    epoch_test_kl_losses = []
+
+    for epoch in range(epochs):
+        model.train()
+        train_recon_loss = 0.0
+        train_kl_loss = 0.0
+        
+        for inputs_cpu, field_numbers in train_dataloader:
+            
+            inputs = inputs_cpu.to(device)
+            mu, log_var, z, reconstructed = model(inputs)
+            
+            # Compute VAE losses
+            # recon_loss = criterion(reconstructed, inputs)
+            # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+
+            recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
+            log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability
+            kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())              
+            loss = recon_loss + kl_divergence
+            
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            
+            train_recon_loss += recon_loss.item()
+            train_kl_loss += kl_divergence.item()
+        
+        epoch_train_recon_losses.append(train_recon_loss / len(train_dataloader))
+        epoch_train_kl_losses.append(train_kl_loss / len(train_dataloader))
+        
+        # Evaluation on test
+        model.eval()
+        test_recon_loss = 0.0
+        test_kl_loss = 0.0
+        
+        with torch.no_grad():
+            for inputs_cpu, field_numbers in test_dataloader:
+                inputs = inputs_cpu.to(device)
+
+                mu, log_var, z, reconstructed = model(inputs)
+                
+                # recon_loss = criterion(reconstructed, inputs)
+                # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+
+                recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
+                log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability
+                kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())              
+                loss = recon_loss + kl_divergence
+                
+                test_recon_loss += recon_loss.item()
+                test_kl_loss += kl_divergence.item()
+        
+        epoch_test_recon_losses.append(test_recon_loss / len(test_dataloader))
+        epoch_test_kl_losses.append(test_kl_loss / len(test_dataloader))
+        
+        print(f"Epoch {epoch + 1}/{epochs}")
+        print(f"  Train Recon Loss: {train_recon_loss / len(train_dataloader):.4f}, Train KL Loss: {train_kl_loss / len(train_dataloader):.4f}")
+        print(f"  Test Recon Loss: {test_recon_loss / len(test_dataloader):.4f}, Test KL Loss: {test_kl_loss / len(test_dataloader):.4f}")
+    return model, epoch_train_recon_losses, epoch_train_kl_losses, epoch_test_recon_losses, epoch_test_kl_losses
+
+
+
+def extract_features_vae(model, dataloader, device='mps'):
+    features = []
+    field_numbers_all = []
+    model.eval()
+    with torch.no_grad():
+        for inputs_cpu, field_numbers in dataloader:
+            inputs = inputs_cpu.to(device)
+            mu, log_var, z, reconstructed = model(inputs)
+            features.append(z.view(z.size(0), -1))
+            field_numbers_all.extend(field_numbers)
+    return torch.cat(features), field_numbers_all
+
+
 
