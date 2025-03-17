@@ -8,7 +8,7 @@ from sklearn.metrics import confusion_matrix
 import torch
 import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment
-
+from sklearn.metrics import adjusted_rand_score, fowlkes_mallows_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
 
 
 def assign_field_labels(patch_coordinates, patch_predictions, threshold=0.1):
@@ -129,8 +129,10 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
     precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
     recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
     f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
-    
-    return acc, precision_per_class, recall_per_class, f1_per_class
+    # fmi_per_class = np.sqrt(precision_per_class * recall_per_class)
+    fmi = fowlkes_mallows_score(y_true, mapped_preds)
+
+    return acc, precision_per_class, recall_per_class, f1_per_class, fmi
 
 
 

@@ -24,10 +24,19 @@ fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MAS
 # labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
 
-#### Trained Model Save Paths ####
+#### Trained Model Save Paths Baseline 1 ####
 kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'
 kmeans_bvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_bvi.pkl'
 kmeans_mvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_mvi.pkl'
+
+#### Trained Model Save Paths Baseline 2 ####
+kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_b10.pkl'
+kmeans_ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_bvi.pkl'
+kmeans_ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_mvi.pkl'
+
+ae_b10_path = '/home/k64835/SITS-models/baseline_ae/ae_b10.pkl'
+ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/ae_bvi.pkl'
+ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/ae_mvi.pkl'
 
 
 #### Data Parameters ####

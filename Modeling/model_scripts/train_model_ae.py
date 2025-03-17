@@ -35,11 +35,15 @@ def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
     return model, epoch_losses
 
 
-def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
+def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
     
     # Loss and optimizer
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    if optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer == 'SGD':
+        optimizer = optim.SGD(model.parameters(), momentum=momentum)
     
     epoch_train_losses = []
     epoch_test_losses = []
@@ -163,11 +167,11 @@ def evaluate_clustering_metrics_old(gt_aligned, pred_aligned):
     return metrics
 
 
-### VAE functions ###
+### --- VAE functions --- ###
 
 def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
 
-    criterion = nn.MSELoss()
+    # Loss: L2 loss (Squared Sum of Errors)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     epoch_train_recon_losses = []
@@ -191,7 +195,8 @@ def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.00
 
             recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
             log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability
-            kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())              
+            # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())   ask momo  
+            kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()    #mean over batch     
             loss = recon_loss + kl_divergence
             
             loss.backward()
@@ -220,7 +225,8 @@ def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.00
 
                 recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
                 log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability
-                kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())              
+                # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())  
+                kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()            
                 loss = recon_loss + kl_divergence
                 
                 test_recon_loss += recon_loss.item()
