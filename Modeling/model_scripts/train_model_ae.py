@@ -11,19 +11,17 @@ from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutu
 
 
 def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
-    
-    # Loss and optimizer
+    """ Function to train the autoencoder without test set :( -> remove
+    """
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     epoch_losses = []
-    
-    # Training loop
     model.train()
     for epoch in range(epochs):
         epoch_loss = 0
         for inputs_cpu, field_numbers in dataloader:
             inputs = inputs_cpu.to(device)
-            # inputs, field_numbers = batch                   # Extract inputs
+            # inputs, field_numbers = batch                   
             optimizer.zero_grad()
             latent, reconstructed = model(inputs)
             loss = criterion(reconstructed, inputs)
@@ -36,10 +34,10 @@ def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
 
 
 def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
-    
+    """ Vanilla function to train the Autoencoder
+    """
     # Loss and optimizer
     criterion = nn.MSELoss()
-
     if optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer == 'SGD':
@@ -48,7 +46,6 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
     epoch_train_losses = []
     epoch_test_losses = []
     
-    # Training loop
     for epoch in range(epochs):
         model.train()  
         train_loss = 0.0
@@ -73,16 +70,14 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
                 latent, reconstructed = model(inputs)
                 loss = criterion(reconstructed, inputs)
                 test_loss += loss.item()
-        
         epoch_test_losses.append(test_loss / len(test_dataloader))
-        
-        # Print the loss for both train and test sets
         print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
-    
     return model, epoch_train_losses, epoch_test_losses
 
 
 def extract_features_ae(model, dataloader, device='mps'):
+    """ Get latent bottleneck vectors (as features) using only the trained encoder
+    """
     features = []
     field_numbers_all = []
     model.eval()
@@ -103,7 +98,6 @@ def get_string_fielddata(patch_coordinates):
     return new_coords
 
 
-
 def apply_kmeans(features, n_clusters=2, random_state=10):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
     predictions = kmeans.fit(features.cpu().numpy())
@@ -121,8 +115,7 @@ def apply_dbscan(features, eps=0.5, min_samples=5):
     predictions = dbscan.fit_predict(features.cpu().numpy())
     return dbscan, predictions
 
-
-# Evaluation function only for eval
+# Evaluation function (for patch-level data)
 def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
 
     df = pd.read_csv(gt_path, sep=';')
@@ -139,18 +132,15 @@ def get_gt_and_pred_aligned(field_numbers, labels, gt_path):
                 field_labels[int(float(n))] = labels[i]
         else:
             field_labels[int(float(number))] = labels[i]
-
     gt_aligned = []
     pred_aligned = []
     for field_number, predicted_label in field_labels.items():
         if field_number in gt_mapping:
             gt_aligned.append(1 if gt_mapping[field_number] == 'yes' else 0)
             pred_aligned.append(predicted_label)
-
     return gt_aligned, pred_aligned
 
 
-    
 # Evaluation function only for evaluation set
 def evaluate_clustering_metrics_old(gt_aligned, pred_aligned):
     accuracy = accuracy_score(gt_aligned, pred_aligned)

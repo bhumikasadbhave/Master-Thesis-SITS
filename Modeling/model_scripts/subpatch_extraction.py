@@ -16,30 +16,26 @@ def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
     patch_coordinates = []
     batch_size, time, channels, height, width = image_data.shape
     
-    # Loop over the fields (batch)
     for b in range(batch_size):  
         field_number = field_numbers[b]  
 
-        # Extract patches across all channels and time steps in one go
         for i in range(0, height - patch_size + 1, patch_size): 
             for j in range(0, width - patch_size + 1, patch_size):  
 
-                patch = image_data[b, :, :, i:i + patch_size, j:j + patch_size]
+                patch = image_data[b, :, :, i:i + patch_size, j:j + patch_size]   # Extract patches across all channels and time steps in one go
 
                 if not isinstance(patch, torch.Tensor):
                     patch = torch.tensor(patch)
-
-                if torch.any(patch > 0):  # Ignore all-zero patches
+                if torch.any(patch > 0):  
                     patch1 = patch.clone() 
 
                     # Calculate channel-wise mean for non-zero values
                     for t in range(time):  
                         for c in range(channels):  
-                            channel_patch = patch1[t, c]            # Extract specific channel and time frame
+                            channel_patch = patch1[t, c]            # Extract channel and time!
                             if torch.any(channel_patch > 0):  
                                 avg_val = torch.mean(channel_patch[channel_patch > 0])
                                 channel_patch[channel_patch == 0] = avg_val  
-                    
                     patches.append(patch1)
                     patch_coordinates.append((field_number, i, j))  
                         
@@ -56,27 +52,24 @@ def non_overlapping_sliding_window_non_temporal(image_data, field_numbers, patch
     """
     patches = []
     patch_coordinates = []
-    batch_size, channels, height, width = image_data.shape  # No time dimension
+    batch_size, channels, height, width = image_data.shape  # No time dimension!
 
-    # Loop over the fields (batch)
     for b in range(batch_size):  
         field_number = field_numbers[b]  
 
-        # Extract patches across all channels in one go
         for i in range(0, height - patch_size + 1, patch_size): 
             for j in range(0, width - patch_size + 1, patch_size):  
                 
-                patch = image_data[b, :, i:i + patch_size, j:j + patch_size]  # No time dimension
+                patch = image_data[b, :, i:i + patch_size, j:j + patch_size]  # No time dimension!
 
                 if not isinstance(patch, torch.Tensor):
                     patch = torch.tensor(patch)
-
-                if torch.any(patch > 0):  # Ignore all-zero patches
+                if torch.any(patch > 0):  
                     patch1 = patch.clone() 
 
                     # Calculate channel-wise mean for non-zero values
                     for c in range(channels):  
-                        channel_patch = patch1[c]  # Extract specific channel
+                        channel_patch = patch1[c]       # Extract only the channel
                         if torch.any(channel_patch > 0):  
                             avg_val = torch.mean(channel_patch[channel_patch > 0])
                             channel_patch[channel_patch == 0] = avg_val  

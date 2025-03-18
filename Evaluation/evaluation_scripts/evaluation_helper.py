@@ -58,13 +58,11 @@ def evaluate_test_labels(test_field_labels, ground_truth_csv_path):
             true_label = ground_truth[field_number]
             y_pred.append(predicted_label)
             y_true.append(1 if true_label == "yes" else 0)
-
     accuracy = accuracy_score(y_true, y_pred)
     report = classification_report(y_true, y_pred)
     cm = confusion_matrix(y_true, y_pred)
     
     return accuracy, report, cm
-
 
 
 def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
@@ -96,7 +94,6 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
             y_pred.append(predicted_label)
             y_true.append(true_label)
 
-    # Convert to numpy arrays
     y_pred = np.array(y_pred)
     y_true = np.array(y_true)
 
@@ -112,20 +109,16 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
         for j, label in enumerate(unique_labels):
             cost_matrix[i, j] = -np.sum((y_pred == cluster) & (y_true == label))
 
-    # Solve best assignment using Hungarian algorithm
+    # Hungarian algorithm -> Best assignment
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
-    # Compute best cluster-label mapping
+    # Best cluster-label mapping
     mapping = {unique_clusters[row]: unique_labels[col] for row, col in zip(row_ind, col_ind)}
     mapped_preds = np.array([mapping[pred] for pred in y_pred])
 
-    # Compute clustering accuracy
     acc = np.mean(mapped_preds == y_true)
-
-    # Compute confusion matrix after mapping
     cm = confusion_matrix(y_true, mapped_preds, labels=unique_labels)
 
-    # Compute precision, recall, and F1-score per class
     precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
     recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
     f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
