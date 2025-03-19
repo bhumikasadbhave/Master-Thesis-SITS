@@ -41,7 +41,7 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
     if optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer == 'SGD':
-        optimizer = optim.SGD(model.parameters(), momentum=momentum)
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     
     epoch_train_losses = []
     epoch_test_losses = []
@@ -159,10 +159,14 @@ def evaluate_clustering_metrics_old(gt_aligned, pred_aligned):
 
 ### --- VAE functions --- ###
 
-def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001, device='mps'):
+def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.001,optimizer='Adam', momentum=0.9, device='mps'):
 
     # Loss: L2 loss (Squared Sum of Errors)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    # Optimizer
+    if optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer == 'SGD':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 
     epoch_train_recon_losses = []
     epoch_train_kl_losses = []

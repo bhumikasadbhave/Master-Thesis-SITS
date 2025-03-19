@@ -29,18 +29,20 @@ kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'
 kmeans_bvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_bvi.pkl'
 kmeans_mvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_mvi.pkl'
 
-#### Trained Model Save Paths Baseline 2 ####
-kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_b10.pkl'
+#### Trained Model Save Paths: Autoencoders for Baseline 2 ####
+kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_vae_b10_res.pkl'
 kmeans_ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_bvi.pkl'
 kmeans_ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_mvi.pkl'
 
-ae_b10_path = '/home/k64835/SITS-models/baseline_ae/ae_b10.pkl'
+ae_b10_path = '/home/k64835/SITS-models/baseline_ae/vae_b10_res.pkl'
 ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/ae_bvi.pkl'
 ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/ae_mvi.pkl'
 
+#### Best performing Autoencoder as Baseline 2 ####
+best_ae_kmeans_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_b10_a1.pkl'
+best_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/ae_b10_a1.pkl'
 
 #### Data Parameters ####
-
 temporal_points = [
     ("june", "2019-06-01", "2019-06-30"),
     ("july", "2019-07-01", "2019-07-31"),

@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import recall_score
 import matplotlib.patches as patches
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report
@@ -124,6 +125,7 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
     f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
     # fmi_per_class = np.sqrt(precision_per_class * recall_per_class)
     fmi = fowlkes_mallows_score(y_true, mapped_preds)
+    # recall = recall_score(y_true, mapped_preds)
 
     return acc, precision_per_class, recall_per_class, f1_per_class, fmi
 
