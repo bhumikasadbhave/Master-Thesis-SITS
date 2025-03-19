@@ -30,7 +30,7 @@ def extract_features(model, dataloader, device):
     return torch.cat(features_list, dim=0), field_numbers_all
 
 
-# 2. ConvLSTM for Spatiotemporal Feature Extraction
+# 2. ConvLSTM for Spatiotemporal Feature Extraction -> Remove
 class ConvLSTMFeatureExtractor(nn.Module):
     def __init__(self, input_channels=10, hidden_dim=64, kernel_size=3, num_layers=2):
         super().__init__()

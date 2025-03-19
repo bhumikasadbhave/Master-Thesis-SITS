@@ -10,7 +10,7 @@ from scripts.temporal_data_preprocessor import *
 from scripts.temporal_data_loader import *
 from scripts.temporal_visualiser import *
 from scripts.temporal_chanel_refinement import *
-from model_scripts.get_statistics import *
+from model_scripts.model_helper import *
 from model_scripts.dataset_creation import *
 from model_scripts.train_model_ae import *
 from model_scripts.model_visualiser import *

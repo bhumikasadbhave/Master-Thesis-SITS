@@ -3,13 +3,13 @@ import torch.nn.functional as F
 import torch.optim as optim
 from sklearn.cluster import KMeans
 import numpy as np
+import torch.nn as nn
 from torch.optim import Adam
 
 def pretrain_autoencoder(model, train_dataloader, test_dataloader, epochs=10, lr=1e-3, device='cuda'):
     model.to(device)
     optimizer = Adam(model.autoencoder.parameters(), lr=lr)
     criterion = torch.nn.MSELoss()
-
     for epoch in range(epochs):
         model.train()
         train_loss = 0
@@ -21,9 +21,7 @@ def pretrain_autoencoder(model, train_dataloader, test_dataloader, epochs=10, lr
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
             train_loss += loss.item()
-
         train_loss /= len(train_dataloader)
 
         # Test Loss
@@ -34,7 +32,6 @@ def pretrain_autoencoder(model, train_dataloader, test_dataloader, epochs=10, lr
                 x_batch = x_batch.to(device)
                 z, x_reconstructed = model.autoencoder(x_batch)
                 test_loss += criterion(x_reconstructed, x_batch).item()
-        
         test_loss /= len(test_dataloader)
         
         print(f"Epoch {epoch+1}/{epochs} - Autoencoder Train Loss: {train_loss:.4f} | Test Loss: {test_loss:.4f}")
@@ -45,7 +42,6 @@ def initialize_clusters(model, dataloader, device='cuda'):
     model.to(device)
     model.eval()
     z_values = []
-    
     with torch.no_grad():
         for x_batch, _ in dataloader:
             x_batch = x_batch.to(device)
@@ -130,7 +126,6 @@ def train_dcec(model, train_dataloader, test_dataloader, epochs=50, lr=1e-3, gam
 
         print(f"Epoch {epoch+1}/{epochs} - Train Loss: {train_total_loss:.4f} (Recon: {train_recon_loss:.4f}, Clust: {train_clustering_loss:.4f}) | "
               f"Test Loss: {test_total_loss:.4f} (Recon: {test_recon_loss:.4f}, Clust: {test_clustering_loss:.4f})")
-
     print("DCEC Training Complete!")
 
 
@@ -146,7 +141,6 @@ def train_dcec_old(model, train_dataloader, test_dataloader, epochs=10, lr=0.001
     mse_loss = nn.MSELoss()
     kl_loss = nn.KLDivLoss(reduction='batchmean')
 
-    # To store the epoch losses for both train and test
     epoch_losses = {
         'train_reconstruction_loss': [],
         'train_clustering_loss': [],
@@ -178,11 +172,10 @@ def train_dcec_old(model, train_dataloader, test_dataloader, epochs=10, lr=0.001
             total_train_reconstruction_loss += reconstruction_loss.item()
             total_train_clustering_loss += clustering_loss.item()
         
-        # Calculate average train losses
         avg_train_reconstruction_loss = total_train_reconstruction_loss / len(train_dataloader)
         avg_train_clustering_loss = total_train_clustering_loss / len(train_dataloader)
 
-        # Test phase
+        # Evaluation on test set
         model.eval()
         total_test_reconstruction_loss = 0.0
         total_test_clustering_loss = 0.0

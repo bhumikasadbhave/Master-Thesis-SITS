@@ -17,11 +17,9 @@ def get_pretrained_resnet50(in_channels):
     resnet50_model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
     resnet50_model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     feature_extractor = torch.nn.Sequential(*list(resnet50_model.children())[:-1])  # Remove the FC layer
-
-    # Freeze the model weights
-    for param in feature_extractor.parameters():
+    
+    for param in feature_extractor.parameters():        # Freeze weights
         param.requires_grad = False
-
     return feature_extractor
 
 
@@ -32,12 +30,9 @@ def get_pretrained_vgg16(in_channels):
     vgg16_model.features[0] = nn.Conv2d(in_channels, 64, kernel_size=(3, 3), padding=(1, 1))
     feature_extractor = torch.nn.Sequential(*list(vgg16_model.features.children()))  # Use only the convolutional layers
     
-    # Freeze the model weights
-    for param in feature_extractor.parameters():
+    for param in feature_extractor.parameters():        # Freeze weights
         param.requires_grad = False
-
     return feature_extractor
-
 
 
 def extract_features(feature_extractor, dataloader, model_name):
@@ -51,10 +46,10 @@ def extract_features(feature_extractor, dataloader, model_name):
             outputs = feature_extractor(inputs)
 
             if model_name == 'resnet50':
-                # ResNet50 output: [batch_size, 2048, 1, 1] after the convolutional layers
+                # ResNet50 output: [batch_size, 2048, 1, 1] 
                 outputs = outputs.squeeze(-1).squeeze(-1)     # Flatten to [batch_size, 2048]
             elif model_name == 'vgg16':
-                # VGG16 output: [batch_size, 512, 7, 7] after the convolutional layers
+                # VGG16 output: [batch_size, 512, 7, 7] 
                 outputs = outputs.view(outputs.size(0), -1)  # Flatten to [batch_size, 512*7*7] or [batch_size, 4096]
             else:
                 raise ValueError(f"Unsupported model_name: {model_name}. Choose either 'vgg16' or 'resnet50'.")
@@ -109,9 +104,7 @@ def extract_features_resnet_rgb(dataset, num_channels, pretrained_weights=ResNet
     return features
 
 
-
-############ Temporal feature extraction ############## 
-############# change lstm to autoencoder ##############
+############# Using RESNET for convolution, LSTM for time series -> Remove this ##############
 class SpatioTemporalFeatureExtractor(nn.Module):
     def __init__(self, spatial_weights, input_channels, hidden_dim=256, lstm_layers=1):
         super().__init__()
@@ -144,4 +137,4 @@ class SpatioTemporalFeatureExtractor(nn.Module):
             spatial_features.append(timestep_features)
         spatial_features = torch.stack(spatial_features, dim=1)  # (batch, timesteps, spatial_features_dim)
         temporal_features, _ = self.temporal_model(spatial_features)
-        return temporal_features[:, -1]  # last timestep's features?
+        return temporal_features[:, -1] 
