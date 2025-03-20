@@ -96,9 +96,9 @@ class PreProcessingPipelineTemporal:
             'indexbands': indexbands_temporal_cubes,
             'indexonly': indexonly_temporal_cubes,
             'relevantbands': relevantbands_temporal_cubes,
-            'multipleindices': multiple_indices_temporal_cubes,
+            'multipleindices': mvi_temporal_cubes,
             'multipleindicesbands': multiple_indices_bands_temporal_cubes,
-            'allbands': allbands_temporal_cubes
+            'allbands': b10_temporal_cubes
         }
 
         if bands not in band_selection_methods:
@@ -145,12 +145,9 @@ class PreProcessingPipelineTemporal:
 
         # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
-            'indexbands': indexbands_temporal_cubes,
-            'indexonly': indexonly_temporal_cubes,
-            'relevantbands': relevantbands_temporal_cubes,
-            'multipleindices': multiple_indices_temporal_cubes,
-            'multipleindicesbands': multiple_indices_bands_temporal_cubes,
-            'allbands': allbands_temporal_cubes
+            'mvi': mvi_temporal_cubes,
+            'b4': b4_temporal_cubes,
+            'b10': b10_temporal_cubes
         }
 
         if bands not in band_selection_methods:
