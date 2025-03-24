@@ -30,11 +30,11 @@ kmeans_bvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_bvi.pkl'
 kmeans_mvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_mvi.pkl'
 
 #### Trained Model Save Paths: Autoencoders for Baseline 2 ####
-kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_vae_b10_res.pkl'
+kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kadam3.pkl'
 kmeans_ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_bvi.pkl'
 kmeans_ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_mvi.pkl'
 
-ae_b10_path = '/home/k64835/SITS-models/baseline_ae/vae_b10_res.pkl'
+ae_b10_path = '/home/k64835/SITS-models/baseline_ae/adam3.pkl'
 ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/ae_bvi.pkl'
 ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/ae_mvi.pkl'
 
@@ -51,7 +51,7 @@ temporal_points = [
 ]
 
 patch_field_size = (64, 64)
-subpatch_size = 5
+subpatch_size = 4
 patch_to_field_threshold = 0.2
 temporal_stack_size = 7
 
