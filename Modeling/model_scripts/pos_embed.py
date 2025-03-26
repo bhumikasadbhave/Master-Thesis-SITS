@@ -110,3 +110,30 @@ def process_timestamps(field_numbers, acquisition_dates):
         
         timestamps.append(field_timestamps)
     return torch.tensor(timestamps, dtype=torch.float32)
+
+
+def process_timestamps7(field_numbers, acquisition_dates):
+    """
+    Convert 'yyyymmdd.0' format to days since a reference date.
+    Returns timestamps tensor: (N, T, 3 (day,mon,year))
+    """
+    timestamps = []
+    for field_number in field_numbers:
+        dates = acquisition_dates.get(field_number, [])
+        field_timestamps = []
+        indices_to_consider = [0, 1, 2, 3, 4, 5, 6]
+        
+        for idx in indices_to_consider:
+            date_str = dates[idx]
+            
+            year, month, day = int(date_str[:4]), int(date_str[4:6]), int(date_str[6:8])
+            field_timestamps.append([year, month, day])
+            
+            # Calculate the days since June 1st
+            # reference_date = datetime.datetime(year, 6, 1) 
+            # current_date = datetime.datetime(year, month, day)
+            # delta_days = (current_date - reference_date).days
+            # field_timestamps.append(delta_days)
+        
+        timestamps.append(field_timestamps)
+    return torch.tensor(timestamps, dtype=torch.float32)

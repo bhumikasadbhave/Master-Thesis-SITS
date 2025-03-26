@@ -3,7 +3,7 @@ import torch.nn as nn
 from timm.models.vision_transformer import PatchEmbed, Block
 from  model_scripts.pos_embed import *
 
-class MaskedAutoencoderViT(nn.Module):
+class MaskedAutoencoderViT_7ts(nn.Module):
     """ Masked Autoencoder with VisionTransformer backbone
     """
     def __init__(self, img_size=64, patch_size=4, in_chans=3,
@@ -185,28 +185,34 @@ class MaskedAutoencoderViT(nn.Module):
     def forward_encoder(self, x, timestamps, mask_ratio, mask=None):
         
         # Patch Embeddings for all 3 temporal images
-        # print('encoder forward', x.shape)
-        # print('encoder forward', x[:, 0].shape)
-        # x1 = self.patch_embed(x[:, 0])
-        # x2 = self.patch_embed(x[:, 1])
-        # x3 = self.patch_embed(x[:, 2])
+        print('encoder forward', x.shape)
+        print('encoder forward', x[:, :, 0].shape)
         x1 = self.patch_embed(x[:, :, 0])
         x2 = self.patch_embed(x[:, :, 1])
         x3 = self.patch_embed(x[:, :, 2])
-        x = torch.cat([x1, x2, x3], dim=1)
+        x4 = self.patch_embed(x[:, :, 3])
+        x5 = self.patch_embed(x[:, :, 4])
+        x6 = self.patch_embed(x[:, :, 5])
+        x7 = self.patch_embed(x[:, :, 6])
+
+        x = torch.cat([x1, x2, x3, x4, x5, x6, x7], dim=1)
         
         # Temporal Embeddings
-        # print(timestamps.shape, x.shape)
+        print(timestamps.shape, x.shape)
         ts_embed = torch.cat([
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 0].float()),
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 1].float()),
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 2].float())], dim=1).float()
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 0].float()),
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 1].float()),
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 2].float())], dim=1).float()
         
-        ts_embed = ts_embed.reshape(-1, 3, ts_embed.shape[-1]).unsqueeze(2)
-        ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 3, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
+        print(ts_embed.shape)
+        
+        ts_embed = ts_embed.reshape(-1, 7, ts_embed.shape[-1]).unsqueeze(2)
+        print(ts_embed.shape)
+        ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 7, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
+        print(ts_embed.shape)
 
         # Add positional embedding without cls token
-        x = x + torch.cat([self.pos_embed[:, 1:, :].repeat(ts_embed.shape[0], 3, 1), ts_embed], dim=-1)
+        x = x + torch.cat([self.pos_embed[:, 1:, :].repeat(ts_embed.shape[0], 7, 1), ts_embed], dim=-1)
 
         # Masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio, mask=mask)
@@ -242,15 +248,16 @@ class MaskedAutoencoderViT(nn.Module):
 
         assert timestamps.shape[-1] == 3, f"Expected timestamps with 3 channels, got {timestamps.shape}"
 
-        ts_embed = torch.cat([get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 0].float()),
-                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 1].float()),
-                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 2].float())], dim=1).float()
+        ts_embed = torch.cat([get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 0].float()),
+                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 1].float()),
+                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 2].float())
+                   ], dim=1).float()
         
         # print("ts embedd shape before reshape",ts_embed.shape)
         # print("x before reshape",x.shape)
         
-        ts_embed = ts_embed.reshape(-1, 3, ts_embed.shape[-1]).unsqueeze(2)
-        ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 3, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
+        ts_embed = ts_embed.reshape(-1, 7, ts_embed.shape[-1]).unsqueeze(2)
+        ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 7, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
         ts_embed = torch.cat([torch.zeros((ts_embed.shape[0], 1, ts_embed.shape[2]), device=ts_embed.device), ts_embed], dim=1)
 
         # print("ts embedd shape before concat", ts_embed.shape)
@@ -258,7 +265,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         # Add positional embedding
         x = x + torch.cat(
-            [torch.cat([self.decoder_pos_embed[:, :1, :], self.decoder_pos_embed[:, 1:, :].repeat(1, 3, 1)], dim=1).expand(ts_embed.shape[0], -1, -1),
+            [torch.cat([self.decoder_pos_embed[:, :1, :], self.decoder_pos_embed[:, 1:, :].repeat(1, 7, 1)], dim=1).expand(ts_embed.shape[0], -1, -1),
              ts_embed], dim=-1)
         
         # print('x before decoder transformer blocks')
@@ -286,10 +293,15 @@ class MaskedAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove
         """
-        target1, valid_mask1 = self.patchify(images[:, 0])
-        target2, valid_mask2 = self.patchify(images[:, 1])
-        target3, valid_mask3 = self.patchify(images[:, 2])
-        target = torch.cat([target1, target2, target3], dim=1)
+        print("Input shape:", images.shape)
+        target1, valid_mask1 = self.patchify(images[:, :, 0])
+        target2, valid_mask2 = self.patchify(images[:, :, 1])
+        target3, valid_mask3 = self.patchify(images[:, :, 2])
+        target4, valid_mask1 = self.patchify(images[:, :, 3])
+        target5, valid_mask2 = self.patchify(images[:, :, 4])
+        target6, valid_mask3 = self.patchify(images[:, :, 5])
+        target7, valid_mask3 = self.patchify(images[:, :, 6])
+        target = torch.cat([target1, target2, target3, target4, target5, target6, target7], dim=1)
         previous_target = target
         
         if self.norm_pix_loss:

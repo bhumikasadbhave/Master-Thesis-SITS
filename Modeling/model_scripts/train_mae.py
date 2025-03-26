@@ -46,9 +46,12 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
 
         for inputs_cpu, field_numbers, timestamps in train_dataloader:
             inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
-            optimizer.zero_grad()  
-            print(inputs.shape)
-            pred, mask, loss = model(inputs, timestamps, mask_ratio=masking_ratio)  
+            # print(inputs.shape)
+            optimizer.zero_grad() 
+            loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
+            # print(latent.shape) 
+            # print("Loss requires grad:", loss.requires_grad)
+            # print("Pred requires grad:", pred.requires_grad)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()        
@@ -61,9 +64,24 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
             for inputs_cpu, field_numbers, timestamps in test_dataloader: 
                 inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
 
-                pred, mask, loss = model(inputs, timestamps, mask_ratio=masking_ratio) 
+                loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
         print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
 
     return model, epoch_train_losses, epoch_test_losses
+
+
+def extract_latent_features_mae(model, dataloader, device):
+    model.eval()
+    latents = []
+    field_numbers_all = []
+    with torch.no_grad():
+        for imgs, field_numbers, timestamps in dataloader:
+            imgs, timestamps = imgs.to(device), timestamps.to(device)
+            _, _, _, latent = model(imgs, timestamps)  # Get latent
+            latents.append(latent[:, 0, :].cpu())  # Take only the CLS token
+            field_numbers_all.extend(field_numbers)
+    return torch.cat(latents, dim=0), field_numbers_all
+
+

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import cv2
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import fbeta_score, recall_score, f1_score, precision_score
 from sklearn.metrics import confusion_matrix
 from scipy.optimize import linear_sum_assignment
 
@@ -99,8 +100,10 @@ def get_clustering_accuracy(field_numbers, labels, gt_path):
 
     acc = np.mean(mapped_preds == y_true)
     cm = confusion_matrix(y_true, mapped_preds, labels=unique_labels)
-    precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
-    recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
-    f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+    precision = precision_score(y_true, mapped_preds)
+    f1 = f1_score(y_true, mapped_preds)
+    recall = recall_score(y_true, mapped_preds)
+    f2_score = fbeta_score(y_true, mapped_preds, beta=2)
 
-    return acc, precision_per_class, recall_per_class, f1_per_class
+
+    return acc, precision, recall, f1, f2_score

@@ -33,7 +33,7 @@ def create_data_loader(inputs, field_numbers, batch_size=32, shuffle=True):
     return dataloader
 
 
-def create_data_loader_mae(inputs, field_numbers, timestamps, batch_size=32, shuffle=True):
+def create_data_loader_mae(inputs, field_numbers, timestamps, batch_size=64, shuffle=True):
     dataset = FieldDataset(inputs, field_numbers, timestamps)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader
