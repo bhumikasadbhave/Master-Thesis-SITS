@@ -51,7 +51,7 @@ temporal_points = [
 ]
 
 patch_field_size = (64, 64)
-subpatch_size = 4
+subpatch_size = 8
 patch_to_field_threshold = 0.2
 temporal_stack_size = 7
 

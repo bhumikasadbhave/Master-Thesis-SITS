@@ -120,17 +120,17 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
     acc = np.mean(mapped_preds == y_true)
     cm = confusion_matrix(y_true, mapped_preds, labels=unique_labels)
 
-    # precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
-    # recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
-    # f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
-    # fmi = fowlkes_mallows_score(y_true, mapped_preds)
+    precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
+    recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
+    f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+    fmi = fowlkes_mallows_score(y_true, mapped_preds)
 
-    precision = precision_score(y_true, mapped_preds)
-    f1 = f1_score(y_true, mapped_preds)
-    recall = recall_score(y_true, mapped_preds)
+    # precision = precision_score(y_true, mapped_preds)
+    # f1 = f1_score(y_true, mapped_preds)
+    # recall = recall_score(y_true, mapped_preds)
     f2_score = fbeta_score(y_true, mapped_preds, beta=2)
 
-    return acc, precision, recall, f1, f2_score
+    return acc, precision_per_class, recall_per_class, f1_per_class, f2_score
 
 
 
