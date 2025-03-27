@@ -195,29 +195,107 @@ def evaluate_test_labels_ae(test_field_labels, ground_truth_csv_path):
     return accuracy, report, cm, x_y_coords
 
 
-################################ functions for DCEC #######################################
+################################ New functions for assigning labels #######################################
 
-def assign_field_labels_clustering(subpatch_coordinates, subpatch_predictions, threshold=0.1):
+def assign_field_labels_ae_train(subpatch_coordinates, subpatch_predictions, disease, threshold=0.1):
     """
-    Assign patch/field-level labels based on sub-patch clustering predictions.
+    Assign patch/field-level labels based on sub-patch predictions
     Returns: field_labels: Dictionary {field_number: field_label}
     """
     field_dict = {}
-    
-    # Assign each sub-patch to the predicted cluster (highest probability in q)
     for field_number, prediction in zip(subpatch_coordinates, subpatch_predictions):
-        # Find the index of the highest cluster assignment probability
-        cluster_label = prediction  # Using the cluster with max probability
         if field_number not in field_dict:
             field_dict[field_number] = []
-        field_dict[field_number].append(cluster_label)
+        field_dict[field_number].append(prediction)
 
     field_labels = {}    
     for field_number, predictions in field_dict.items():
-        # Count the number of sub-patches that belong to the diseased cluster (cluster 1, for example)
-        diseased_subpatch_count = np.sum(np.array(predictions) == 1)  # Assuming cluster 1 is the diseased cluster
-        
-        # Assign the label based on the threshold
+        if disease == 1:
+            diseased_subpatch_count = np.sum(np.array(predictions) == 1)
+        else:
+            diseased_subpatch_count = np.sum(np.array(predictions) == 0)
         field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
 
     return field_labels
+
+
+def assign_field_labels_ae_eval(subpatch_coordinates, subpatch_predictions, threshold=0.1):
+    """
+    Assign patch/field-level labels based on sub-patch predictions
+    Returns: field_labels: Dictionary {field_number: field_label}
+    Returns two versions of patch-level labels (one assuming 1=diseased, one assuming 0=diseased)
+    """
+    field_dict = {}
+    for field_number, prediction in zip(subpatch_coordinates, subpatch_predictions):
+        if field_number not in field_dict:
+            field_dict[field_number] = []
+        field_dict[field_number].append(prediction)
+
+    field_labels_1 = {}  # Assuming "1" = diseased
+    field_labels_0 = {}  # Assuming "0" = diseased
+
+    for field_number, predictions in field_dict.items():
+        num_subpatches = len(predictions)
+        num_diseased_1 = np.sum(np.array(predictions) == 1)
+        num_diseased_0 = np.sum(np.array(predictions) == 0)
+
+        # Thresholding for both possible mappings
+        field_labels_1[field_number] = 1 if num_diseased_1 >= (threshold * num_subpatches) else 0
+        field_labels_0[field_number] = 1 if num_diseased_0 >= (threshold * num_subpatches) else 0
+
+    return field_labels_1, field_labels_0
+
+
+def evaluate_best_mapping_new(subpatch_coordinates, subpatch_predictions, ground_truth_csv_path, threshold=0.1):
+    """
+    Evaluate clustering metrics using both mappings (0=diseased or 1=diseased) and choose the best one using Hungarian algorithm
+    """
+    disease = 0
+    field_labels_1, field_labels_0 = assign_field_labels_ae_eval(subpatch_coordinates, subpatch_predictions, threshold)
+
+    acc_1, precision_1, recall_1, f1_1, f2_1 = evaluate_clustering_metrics(field_labels_1, ground_truth_csv_path)
+    acc_0, precision_0, recall_0, f1_0, f2_0 = evaluate_clustering_metrics(field_labels_0, ground_truth_csv_path)
+
+    if acc_1 > acc_0:
+        print("Selected 1 = Diseased mapping")
+        disease = 1
+        return disease, acc_1, precision_1, recall_1, f1_1, f2_1
+    else:
+        print("Selected 0 = Diseased mapping")
+        disease = 0
+        return disease, acc_0, precision_0, recall_0, f1_0, f2_0
+
+
+
+
+
+
+
+
+
+# ################################ functions for DCEC #######################################
+
+# def assign_field_labels_clustering(subpatch_coordinates, subpatch_predictions, threshold=0.1):
+#     """
+#     Assign patch/field-level labels based on sub-patch clustering predictions.
+#     Returns: field_labels: Dictionary {field_number: field_label}
+#     """
+#     field_dict = {}
+    
+#     # Assign each sub-patch to the predicted cluster (highest probability in q)
+#     for field_number, prediction in zip(subpatch_coordinates, subpatch_predictions):
+#         # Find the index of the highest cluster assignment probability
+#         cluster_label = prediction  # Using the cluster with max probability
+#         if field_number not in field_dict:
+#             field_dict[field_number] = []
+#         field_dict[field_number].append(cluster_label)
+
+#     field_labels = {}    
+#     for field_number, predictions in field_dict.items():
+#         # Count the number of sub-patches that belong to the diseased cluster (cluster 1, for example)
+#         diseased_subpatch_count = np.sum(np.array(predictions) == 1)  # Assuming cluster 1 is the diseased cluster
+        
+#         # Assign the label based on the threshold
+#         field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
+
+#     return field_labels

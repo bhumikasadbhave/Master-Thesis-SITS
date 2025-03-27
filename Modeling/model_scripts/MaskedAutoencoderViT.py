@@ -103,10 +103,13 @@ class MaskedAutoencoderViT(nn.Module):
         Dont need to handle valid_patch_mask because we wont be sending invalid patches to the encoder and decoder.. 
         So at the end we only have valid patches to unpatchify..
         """
+        print(x.shape)
         N, L, O = x.shape
         # p = patch_size
         p = self.patch_embed.patch_size[0]
-        h = w = int(L**.5)
+        print(p)
+        h = w = int(x.shape[1]**.5)
+        print(h,w)
         assert h * w == x.shape[1]
 
         C = O // p**2
@@ -289,6 +292,7 @@ class MaskedAutoencoderViT(nn.Module):
         target1, valid_mask1 = self.patchify(images[:, 0])
         target2, valid_mask2 = self.patchify(images[:, 1])
         target3, valid_mask3 = self.patchify(images[:, 2])
+        print("target1",target1.shape)
         target = torch.cat([target1, target2, target3], dim=1)
         previous_target = target
         

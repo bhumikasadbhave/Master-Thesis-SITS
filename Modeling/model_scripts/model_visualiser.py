@@ -44,145 +44,99 @@ def plot_loss_log_scale(train_loss, test_loss, title="Training vs Test Loss (Log
     plt.show()
 
 
-
-def visualize_reconstructions(model, dataloader, device, num_images=5):
+def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, T=3):
+    """ Visualizes reconstructed images over multiple temporal frames.
+    """
     model.eval()
     imgs_list, recon_list = [], []
-    
+
     with torch.no_grad():
         for imgs, fn, timestamps in dataloader:
             imgs, timestamps = imgs.to(device), timestamps.to(device)
-            _, pred, _, _ = model(imgs, timestamps)
+            loss, pred, mask, latent = model(imgs, timestamps)
 
-            imgs_list.append(imgs.cpu())
-            recon_list.append(model.unpatchify(pred).cpu())
+            # print(f"Pred shape: {pred.shape}")  # (N, T*L, patch_size^2 * C)
+            # print("Images shape: ", imgs.shape)  # (N, C, T, H, W)
+
+            # Reshape pred from (N, T*L, P^2*C) to (N, T, L, P^2*C)
+            N, L_total, O = pred.shape
+            L = L_total // T  # Number of patches per image -> (should be 64)
+            pred = pred.reshape(N, T, L, O)
+            # print("Reshaped pred:", pred.shape)  # (N, T, L, P^2 * C)
+
+            recons_per_timestep = []
+            for t in range(T):
+                recon_t = model.unpatchify(pred[:, t])  # (N, C, H, W)
+                recons_per_timestep.append(recon_t.cpu())
+
+            # Stack reconstructed frames back into (N, C, T, H, W)
+            recons_stacked = torch.stack(recons_per_timestep, dim=1)  # (N, T, C, H, W)
+            imgs_list.append(imgs.cpu())  # (N, C, T, H, W)
+            recon_list.append(recons_stacked)  # (N, T, C, H, W)
 
             if len(imgs_list) * imgs.shape[0] >= num_images:
                 break
 
-    imgs = torch.cat(imgs_list, dim=0)[:num_images]
-    recons = torch.cat(recon_list, dim=0)[:num_images]
+    imgs = torch.cat(imgs_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
+    recons = torch.cat(recon_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
 
-    fig, axes = plt.subplots(num_images, 2, figsize=(8, 2 * num_images))
+    imgs = imgs.permute(0, 2, 1, 3, 4)  # (num_images, T, C, H, W)
+    # recons = recons.permute(0, 2, 1, 3, 4)  # (num_images, T, C, H, W)
+
+    fig, axes = plt.subplots(num_images, T * 2, figsize=(8 * T, 2 * num_images))
     for i in range(num_images):
-        axes[i, 0].imshow(imgs[i].permute(1, 2, 0))  # Original
-        axes[i, 1].imshow(recons[i].permute(1, 2, 0))  # Reconstruction
-        axes[i, 0].axis('off')
-        axes[i, 1].axis('off')
-        axes[i, 0].set_title("Original")
-        axes[i, 1].set_title("Reconstruction")
+        for t in range(T):
+            img = normalize_for_display(imgs[i, t])
+            recon = normalize_for_display(recons[i, t])
+
+            axes[i, t * 2].imshow(img.permute(1, 2, 0).numpy())        # Original at t
+            axes[i, t * 2 + 1].imshow(recon.permute(1, 2, 0).numpy())  # Reconstruction at t
+            axes[i, t * 2].axis('off')
+            axes[i, t * 2 + 1].axis('off')
+            axes[i, t * 2].set_title(f"Original T{t}")
+            axes[i, t * 2 + 1].set_title(f"Reconstruction T{t}")
+
     plt.show()
 
 
-# @torch.no_grad()
-# def make_grid(
-#     tensor: Union[torch.Tensor, List[torch.Tensor]],
-#     nrow: int = 8,
-#     padding: int = 2,
-#     normalize: bool = False,
-#     value_range: Optional[Tuple[int, int]] = None,
-#     scale_each: bool = False,
-#     pad_value: float = 0.0,
-#     **kwargs,
-# ) -> torch.Tensor:
-#     """
-#     Make a grid of images.
+def normalize_for_display(image):
+    """ Adjusts brightness & contrast for visualization. """
+    image = image - image.min()  # Shift to [0, max]
+    image = image / (image.max() + 1e-5)  # Normalize to [0,1]
+    return image
 
-#     Args:
-#         tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
-#             or a list of images all of the same size.
-#         nrow (int, optional): Number of images displayed in each row of the grid.
-#             The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
-#         padding (int, optional): amount of padding. Default: ``2``.
-#         normalize (bool, optional): If True, shift the image to the range (0, 1),
-#             by the min and max values specified by ``value_range``. Default: ``False``.
-#         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
-#             then these numbers are used to normalize the image. By default, min and max
-#             are computed from the tensor.
-#         range (tuple. optional):
-#             .. warning::
-#                 This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``value_range``
-#                 instead.
-#         scale_each (bool, optional): If ``True``, scale each image in the batch of
-#             images separately rather than the (min, max) over all images. Default: ``False``.
-#         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
 
-#     Returns:
-#         grid (Tensor): the tensor containing grid of images.
-#     # """
-#     # if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-#     #     _log_api_usage_once(make_grid)
-#     if not torch.is_tensor(tensor):
-#         if isinstance(tensor, list):
-#             for t in tensor:
-#                 if not torch.is_tensor(t):
-#                     raise TypeError(f"tensor or list of tensors expected, got a list containing {type(t)}")
-#         else:
-#             raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
+def plot_reconstructed_images(model, dataloader, num_images=5, device='mps'):
+    """Plots original and reconstructed images side by side"""
+    
+    model.eval()
+    with torch.no_grad():
+        for inputs_cpu, _ in dataloader:
+            inputs = inputs_cpu.to(device)
+            _, reconstructed = model(inputs)
 
-#     if "range" in kwargs.keys():
-#         warnings.warn(
-#             "The parameter 'range' is deprecated since 0.12 and will be removed in 0.14. "
-#             "Please use 'value_range' instead."
-#         )
-#         value_range = kwargs["range"]
+            # Move tensors to CPU for visualization
+            inputs = inputs.cpu()
+            reconstructed = reconstructed.cpu()
+            
+            fig, axes = plt.subplots(num_images, 2, figsize=(10, 2 * num_images))
+            
+            for i in range(num_images):
+                # Extract the first 3 channels from the first temporal image
+                original_img = inputs[i, :3, 0, :, :].permute(1, 2, 0)  # (H, W, 3)
+                original_img = normalize_for_display(original_img)
+                reconstructed_img = reconstructed[i, :3, 0, :, :].permute(1, 2, 0)  # (H, W, 3)
+                reconstructed_img = normalize_for_display(reconstructed_img)
 
-#     # if list of tensors, convert to a 4D mini-batch Tensor
-#     if isinstance(tensor, list):
-#         tensor = torch.stack(tensor, dim=0)
+                # Plot original image
+                axes[i, 0].imshow(original_img.numpy())
+                axes[i, 0].set_title("Original")
+                axes[i, 0].axis("off")
 
-#     if tensor.dim() == 2:  # single image H x W
-#         tensor = tensor.unsqueeze(0)
-#     if tensor.dim() == 3:  # single image
-#         if tensor.size(0) == 1:  # if single-channel, convert to 3-channel
-#             tensor = torch.cat((tensor, tensor, tensor), 0)
-#         tensor = tensor.unsqueeze(0)
+                # Plot reconstructed image
+                axes[i, 1].imshow(reconstructed_img.numpy())
+                axes[i, 1].set_title("Reconstructed")
+                axes[i, 1].axis("off")
 
-#     if tensor.dim() == 4 and tensor.size(1) == 1:  # single-channel images
-#         tensor = torch.cat((tensor, tensor, tensor), 1)
-
-#     if normalize is True:
-#         tensor = tensor.clone()  # avoid modifying tensor in-place
-#         if value_range is not None and not isinstance(value_range, tuple):
-#             raise TypeError("value_range has to be a tuple (min, max) if specified. min and max are numbers")
-
-#         def norm_ip(img, low, high):
-#             img.clamp_(min=low, max=high)
-#             img.sub_(low).div_(max(high - low, 1e-5))
-
-#         def norm_range(t, value_range):
-#             if value_range is not None:
-#                 norm_ip(t, value_range[0], value_range[1])
-#             else:
-#                 norm_ip(t, float(t.min()), float(t.max()))
-
-#         if scale_each is True:
-#             for t in tensor:  # loop over mini-batch dimension
-#                 norm_range(t, value_range)
-#         else:
-#             norm_range(tensor, value_range)
-
-#     if not isinstance(tensor, torch.Tensor):
-#         raise TypeError("tensor should be of type torch.Tensor")
-#     if tensor.size(0) == 1:
-#         return tensor.squeeze(0)
-
-#     # make the mini-batch of images into a grid
-#     nmaps = tensor.size(0)
-#     xmaps = min(nrow, nmaps)
-#     ymaps = int(math.ceil(float(nmaps) / xmaps))
-#     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-#     num_channels = tensor.size(1)
-#     grid = tensor.new_full((num_channels, height * ymaps + padding, width * xmaps + padding), pad_value)
-#     k = 0
-#     for y in range(ymaps):
-#         for x in range(xmaps):
-#             if k >= nmaps:
-#                 break
-#             # Tensor.copy_() is a valid method but seems to be missing from the stubs
-#             # https://pytorch.org/docs/stable/tensors.html#torch.Tensor.copy_
-#             grid.narrow(1, y * height + padding, height - padding).narrow(  # type: ignore[attr-defined]
-#                 2, x * width + padding, width - padding
-#             ).copy_(tensor[k])
-#             k = k + 1
-#     return grid
+            plt.show()
+            break  # Only take the first batch
