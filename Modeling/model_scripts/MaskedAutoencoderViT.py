@@ -189,7 +189,7 @@ class MaskedAutoencoderViT(nn.Module):
         
         # Patch Embeddings for all 3 temporal images
         # print('encoder forward', x.shape)
-        # print('encoder forward', x[:, 0].shape)
+        print('encoder forward', x[:, 0].shape)
         # x1 = self.patch_embed(x[:, 0])
         # x2 = self.patch_embed(x[:, 1])
         # x3 = self.patch_embed(x[:, 2])
@@ -199,7 +199,7 @@ class MaskedAutoencoderViT(nn.Module):
         x = torch.cat([x1, x2, x3], dim=1)
         
         # Temporal Embeddings
-        # print(timestamps.shape, x.shape)
+        print('after patch embed', x1.shape)
         ts_embed = torch.cat([
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 0].float()),
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 1].float()),
@@ -292,7 +292,7 @@ class MaskedAutoencoderViT(nn.Module):
         target1, valid_mask1 = self.patchify(images[:, 0])
         target2, valid_mask2 = self.patchify(images[:, 1])
         target3, valid_mask3 = self.patchify(images[:, 2])
-        print("target1",target1.shape)
+        # print("target1",target1.shape)
         target = torch.cat([target1, target2, target3], dim=1)
         previous_target = target
         

@@ -44,7 +44,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
         model.train()  
         train_loss = 0.0
 
-        for inputs_cpu, field_numbers, timestamps in train_dataloader:
+        for inputs_cpu, field_numbers, timestamps, _ in train_dataloader:
             inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
             # print(inputs.shape)
             optimizer.zero_grad() 
