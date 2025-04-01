@@ -111,8 +111,10 @@ def create_augmented_data_loader(dataloader, augmentations, batch_size=64, shuff
     augmented_flags = []
 
     for images, field_numbers, timestamps in dataloader:
+        # print(images.shape)
         for i in range(images.shape[0]):  # Iterate over batch
             img = images[i]  # (C, T, H, W)
+            # print(img.shape)
 
             # Append original image if keeping originals
             if keep_original:
@@ -124,6 +126,7 @@ def create_augmented_data_loader(dataloader, augmentations, batch_size=64, shuff
             for aug in augmentations:
                 transformed_images = []
                 for t in range(img.shape[1]):  # Loop over T (time steps)
+                    # print(img.shape)
                     img_t = transforms.ToPILImage()(img[:, t, :, :])  # Convert to PIL
                     img_t = aug(img_t)  # Apply specific augmentation
                     transformed_images.append(transforms.ToTensor()(img_t))  # Convert back to tensor

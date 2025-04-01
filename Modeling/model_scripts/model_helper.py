@@ -63,12 +63,12 @@ def resize_with_padding(images, target_height=224, target_width=224):
     return padded_images
 
 
-def resize_images(images, target_size=(224, 224)):
-    """ Preprocess Sentinel-2 images for CNN input.
-    """
-    new_images = []
-    for image in images:
-        image = image / np.max(image)  # Scale to [0, 1]
-        image = cv2.resize(image, target_size)
-        new_images.append(image)
-    return new_images
+# def resize_images(images, target_size=(224, 224)):
+#     """ Preprocess Sentinel-2 images for CNN input.
+#     """
+#     new_images = []
+#     for image in images:
+#         image = image / np.max(image)  # Scale to [0, 1]
+#         image = cv2.resize(image, target_size)
+#         new_images.append(image)
+#     return new_images
