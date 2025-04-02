@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from einops import rearrange
 from transformers import ViTModel
 from transformers import TimesformerModel
+from transformers import AutoModel
 import timm
 
 # 1. ResNet3D for Spatiotemporal Feature Extraction
@@ -21,7 +22,7 @@ class ResNet3DFeatureExtractor(nn.Module):
         return self.resnet3d(x)
 
 
-# 2. Earthformer Transformer Feature Extractor
+# 2. Vision Transformer Feature Extractor
 class EarthformerFeatureExtractor(nn.Module):
     def __init__(self, pretrained_model_name="google/vit-base-patch16-224-in21k"):
         super().__init__()
@@ -51,6 +52,20 @@ class PretrainedTimeSformerFeatureExtractor1(nn.Module):
         # print(f"Inputs for TimeSformer: {x.shape}")  
         outputs = self.timesformer(**inputs)
         return outputs.last_hidden_state 
+
+
+# earthformer
+class PretrainedEarthformerFeatureExtractor(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.earthformer = AutoModel.from_pretrained("OpenClimateFix/earthformer-base")
+
+    def forward(self, x):
+        # input: (batch, time, channels, height, width)
+        x = x.permute(0, 2, 1, 3, 4) 
+        inputs = {'pixel_values': x}
+        outputs = self.earthformer(**inputs)
+        return outputs.last_hidden_state
 
 
 def extract_features(model, dataloader, device):
