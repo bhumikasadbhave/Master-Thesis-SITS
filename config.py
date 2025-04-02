@@ -28,13 +28,16 @@ fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MAS
 kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'
 kmeans_bvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_bvi.pkl'
 kmeans_mvi_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_mvi.pkl'
+kmeans_b4_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b4.pkl'
+kmedoids_path = '/home/k64835/SITS-models/baseline_kmeans/kmedoids_b10.pkl'
+agg_path = '/home/k64835/SITS-models/baseline_kmeans/agg_b10.pkl'
 
 #### Trained Model Save Paths: Autoencoders for Baseline 2 ####
-kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_vae_b10_res.pkl'
+kmeans_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_b10.pkl'
 kmeans_ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_bvi.pkl'
 kmeans_ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_mvi.pkl'
 
-ae_b10_path = '/home/k64835/SITS-models/baseline_ae/vae_b10_res.pkl'
+ae_b10_path = '/home/k64835/SITS-models/baseline_ae/ae_b10_a1.pkl'
 ae_bvi_path = '/home/k64835/SITS-models/baseline_ae/ae_bvi.pkl'
 ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/ae_mvi.pkl'
 
@@ -52,7 +55,7 @@ temporal_points = [
 
 patch_field_size = (64, 64)
 subpatch_size = 5
-patch_to_field_threshold = 0.2
+patch_to_field_threshold = 0.1
 temporal_stack_size = 7
 
 ae_batch_size = 64

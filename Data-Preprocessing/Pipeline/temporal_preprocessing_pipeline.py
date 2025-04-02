@@ -93,12 +93,10 @@ class PreProcessingPipelineTemporal:
 
         # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
-            'indexbands': indexbands_temporal_cubes,
-            'indexonly': indexonly_temporal_cubes,
-            'relevantbands': relevantbands_temporal_cubes,
-            'multipleindices': multiple_indices_temporal_cubes,
-            'multipleindicesbands': multiple_indices_bands_temporal_cubes,
-            'allbands': allbands_temporal_cubes
+            'rgb': rgb_temporal_cubes,
+            'mvi': mvi_temporal_cubes,
+            'b4': b4_temporal_cubes,
+            'b10': b10_temporal_cubes
         }
 
         if bands not in band_selection_methods:
@@ -145,12 +143,10 @@ class PreProcessingPipelineTemporal:
 
         # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
-            'indexbands': indexbands_temporal_cubes,
-            'indexonly': indexonly_temporal_cubes,
-            'relevantbands': relevantbands_temporal_cubes,
-            'multipleindices': multiple_indices_temporal_cubes,
-            'multipleindicesbands': multiple_indices_bands_temporal_cubes,
-            'allbands': allbands_temporal_cubes
+            'rgb': rgb_temporal_cubes,
+            'mvi': mvi_temporal_cubes,
+            'b4': b4_temporal_cubes,
+            'b10': b10_temporal_cubes
         }
 
         if bands not in band_selection_methods:
@@ -170,3 +166,62 @@ class PreProcessingPipelineTemporal:
         image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 3, 1, 2)  # No temporal dimension
 
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
+
+
+    def get_processed_temporal_cube3(self, dataset_type, bands, vi_type='msi'):
+            """ 
+            Pipeline to load the saved field patches, remove border pixels, 
+            and extract the last image from the temporal stack as non-temporal data.
+            Returns image tensor and field numbers.
+            
+            Parameters:
+                dataset_type (str): 'train' or 'eval' to specify dataset.
+                bands (str): Type of band selection method.
+                vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
+            """
+
+            # Step 1: Load the saved patches from the file system
+            if dataset_type == 'train':
+                temporal_images = load_field_images_temporal(self.load_train_dir)
+            elif dataset_type == 'eval':
+                temporal_images = load_field_images_temporal(self.load_eval_dir)
+            else:
+                raise ValueError("dataset_type must be either 'train' or 'eval'")
+
+            # Step 2: Remove border pixels
+            border_removed_images = blacken_field_borders_temporal(temporal_images)
+
+            # Step 3: Remove the border pixels of the sugarbeet fields
+            normalized_images = normalize_images(border_removed_images)
+
+            # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
+            band_selection_methods = {
+                'rgb': rgb_temporal_cubes,
+                'mvi': mvi_temporal_cubes,
+                'b4': b4_temporal_cubes,
+                'b10': b10_temporal_cubes
+            }
+
+            if bands not in band_selection_methods:
+                raise ValueError(f"Invalid bands option: {bands}")
+
+            if bands in ['indexbands', 'indexonly']:
+                field_numbers, acquisition_dates, processed_images = band_selection_methods[bands](normalized_images, vi_type)
+            else:
+                field_numbers, acquisition_dates, processed_images = band_selection_methods[bands](normalized_images)
+
+            selected_images = []
+            selected_acquisition_dates = []
+            
+            for i, stack in enumerate(processed_images):
+                selected_images.append([stack[2], stack[4], stack[6]])
+                # field_num = int(float(field_numbers[i]))
+                # selected_acquisition_dates[field_num] = [acquisition_dates[field_numbers[i]][j] for j in [2, 4, 6]]
+                # print(selected_acquisition_dates)
+
+            # Step 5: Return Temporal Cubes for training, and list of images for visualisation
+            images_visualisation = selected_images
+            image_tensor = np.stack(selected_images)
+            image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3)
+            
+            return field_numbers, acquisition_dates, image_tensor, images_visualisation
