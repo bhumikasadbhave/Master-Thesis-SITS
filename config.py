@@ -45,6 +45,9 @@ ae_mvi_path = '/home/k64835/SITS-models/baseline_ae/ae_mvi.pkl'
 best_ae_kmeans_b10_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_b10_a1.pkl'
 best_ae_b10_path = '/home/k64835/SITS-models/baseline_ae/ae_b10_a1.pkl'
 
+
+mae_save_dir = '/home/k64835/'
+
 #### Data Parameters ####
 temporal_points = [
     ("june", "2019-06-01", "2019-06-30"),
@@ -54,7 +57,7 @@ temporal_points = [
 ]
 
 patch_field_size = (64, 64)
-subpatch_size = 5
+subpatch_size = 4
 patch_to_field_threshold = 0.1
 temporal_stack_size = 7
 

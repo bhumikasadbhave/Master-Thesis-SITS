@@ -29,11 +29,12 @@ def create_data_loader(inputs, field_numbers, batch_size=32, shuffle=True):
 class FieldDatasetMAE(Dataset):
     def __init__(self, inputs, field_numbers, timestamps):
         # if isinstance(inputs, np.ndarray):
-        if len(inputs.shape) == 4:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
-        elif len(inputs.shape) == 5:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
-        #inputs = torch.tensor(inputs, dtype=torch.float32)
+        # if len(inputs.shape) == 4:
+        #     inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
+        # elif len(inputs.shape) == 5:
+        #     inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
+        if isinstance(inputs, np.ndarray):
+            inputs = torch.tensor(inputs, dtype=torch.float32)
         self.inputs = inputs
         self.field_numbers = field_numbers 
         if timestamps is not None:

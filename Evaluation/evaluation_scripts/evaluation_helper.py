@@ -134,6 +134,9 @@ def evaluate_clustering_metrics(test_field_labels, ground_truth_csv_path):
 
 
 
+
+
+
 ################################ functions for AE #######################################
 
 def assign_field_labels_ae(subpatch_coordinates, subpatch_predictions, threshold=0.1):
@@ -253,8 +256,8 @@ def evaluate_best_mapping_new(subpatch_coordinates, subpatch_predictions, ground
     disease = 0
     field_labels_1, field_labels_0 = assign_field_labels_ae_eval(subpatch_coordinates, subpatch_predictions, threshold)
 
-    acc_1, precision_1, recall_1, f1_1, f2_1 = evaluate_clustering_metrics(field_labels_1, ground_truth_csv_path)
-    acc_0, precision_0, recall_0, f1_0, f2_0 = evaluate_clustering_metrics(field_labels_0, ground_truth_csv_path)
+    acc_1, precision_1, recall_1, f1_1, f2_1 = evaluate_clustering_metrics_wo_hungarian(field_labels_1, ground_truth_csv_path)
+    acc_0, precision_0, recall_0, f1_0, f2_0 = evaluate_clustering_metrics_wo_hungarian(field_labels_0, ground_truth_csv_path)
 
     if acc_1 > acc_0:
         print("Selected 1 = Diseased mapping")
@@ -267,7 +270,51 @@ def evaluate_best_mapping_new(subpatch_coordinates, subpatch_predictions, ground
 
 
 
+def evaluate_clustering_metrics_wo_hungarian(test_field_labels, ground_truth_csv_path):
+    """
+    Evaluate clustering accuracy (ACC), precision, recall, and F1-score per class.
+    """
+    df = pd.read_csv(ground_truth_csv_path, sep=';')
+    ground_truth = {
+        str(row["Number"]): row["Disease"].strip().lower()
+        for _, row in df.iterrows()
+    }
+    
+    updated_test_field_labels = {}
+    for field_number, label in test_field_labels.items():
+        if '_' in field_number:
+            split_field_numbers = field_number.split('_')
+            for split_field in split_field_numbers:
+                updated_test_field_labels[str(int(float(split_field)))] = label
+        else:
+            updated_test_field_labels[str(int(float(field_number)))] = label
 
+    y_pred = []
+    y_true = []
+
+    for field_number, predicted_label in updated_test_field_labels.items():
+        if field_number in ground_truth:
+            true_label = 1 if ground_truth[field_number] == "yes" else 0
+            y_pred.append(predicted_label)
+            y_true.append(true_label)
+
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+
+    acc = np.mean(y_pred == y_true)
+    cm = confusion_matrix(y_true, y_pred)
+
+    precision_per_class = np.diag(cm) / np.sum(cm, axis=0, where=(np.sum(cm, axis=0) != 0))
+    recall_per_class = np.diag(cm) / np.sum(cm, axis=1, where=(np.sum(cm, axis=1) != 0))
+    f1_per_class = 2 * (precision_per_class * recall_per_class) / (precision_per_class + recall_per_class)
+    fmi = fowlkes_mallows_score(y_true, y_pred)
+
+    # precision = precision_score(y_true, mapped_preds)
+    # f1 = f1_score(y_true, mapped_preds)
+    # recall = recall_score(y_true, mapped_preds)
+    f2_score = fbeta_score(y_true, y_pred, beta=2)
+
+    return acc, precision_per_class, recall_per_class, f1_per_class, f2_score
 
 
 

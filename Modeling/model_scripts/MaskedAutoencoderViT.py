@@ -1,7 +1,12 @@
+from matplotlib import pyplot as plt
 import torch
 import torch.nn as nn
 from timm.models.vision_transformer import PatchEmbed, Block
+from model_scripts.model_visualiser import normalize_for_display
 from  model_scripts.pos_embed import *
+from torchvision.utils import save_image
+import config
+from torchvision import transforms
 
 class MaskedAutoencoderViT(nn.Module):
     """ Masked Autoencoder with VisionTransformer backbone
@@ -19,16 +24,20 @@ class MaskedAutoencoderViT(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim - 384), requires_grad=False)  # fixed sin-cos embedding
 
+        # -- Comment transformer blocks just for now -- #
         self.blocks = nn.ModuleList([
             Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer)
             for i in range(depth)])
+
         self.norm = norm_layer(embed_dim)
+        
 
         # MAE decoder initialisations --------------------------------------------------------------------------
         self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim, bias=True)
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
         self.decoder_pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, decoder_embed_dim - 192), requires_grad=False)  # fixed sin-cos embedding
 
+        # -- Comment transformer blocks just for now -- #
         self.decoder_blocks = nn.ModuleList([
             Block(decoder_embed_dim, decoder_num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer)
             for i in range(decoder_depth)])
@@ -81,6 +90,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         N, C, H, W = images.shape
         # p = patch_size
+        print("inside patchify, patchsize=",self.patch_embed.patch_size)
         p = self.patch_embed.patch_size[0]
 
         assert H % p == 0 and W % p == 0, "Image dimensions must be divisible by patch_size"
@@ -92,8 +102,9 @@ class MaskedAutoencoderViT(nn.Module):
 
         # Create valid patch mask (1 for non-zero patches, 0 for black patches)
         # A black patch is a patch with all zeros, so check if the sum of the patch is zero
-        valid_patch_mask = (x.sum(dim=-1) != 0).float()  # Shape: (B, num_patches)
-        return x , valid_patch_mask
+        #valid_patch_mask = (x.sum(dim=-1) != 0).float()  # Shape: (B, num_patches)
+        
+        return x#, valid_patch_mask
     
     # Unpatchify -----------------------------------------------------------------------------------
     def unpatchify(self, x):
@@ -103,13 +114,10 @@ class MaskedAutoencoderViT(nn.Module):
         Dont need to handle valid_patch_mask because we wont be sending invalid patches to the encoder and decoder.. 
         So at the end we only have valid patches to unpatchify..
         """
-        print(x.shape)
         N, L, O = x.shape
         # p = patch_size
         p = self.patch_embed.patch_size[0]
-        print(p)
         h = w = int(x.shape[1]**.5)
-        print(h,w)
         assert h * w == x.shape[1]
 
         C = O // p**2
@@ -121,67 +129,112 @@ class MaskedAutoencoderViT(nn.Module):
     
     # Random Masking -----------------------------------------------------------------------------------
     def random_masking(self, x, mask_ratio, mask=None):
-    # def random_masking(self, x, mask_ratio, valid_patch_mask, mask=None):
-        """ Perform per-sample random masking by per-sample shuffling.
-            Per-sample shuffiling is done by argsort random noise.
-            x: [N,L,D], sequence
-            Here, we completely discard the black patches, and use only valid patches as input for- masking and shuffing ..
-        """
-
-        N, L, D = x.shape  # Batch, length, p^2 * C
-        len_keep = int(L * (1 - mask_ratio))
-
-        # valid_patch_mask = valid_patch_mask.bool()
-        # print(x.shape, valid_patch_mask.shape)          # [2425, 256, 48], [2425, 256]
-        # Remove samples with no valid patches
-        # valid_samples = valid_patch_mask.sum(dim=1) > 0  
-        # x = x[valid_samples]
-        # valid_patch_mask = valid_patch_mask[valid_samples]
-        # print(x.shape, valid_patch_mask.shape)          # [2345, 256, 48], [2345, 256]
-
-        # Update variables
-        N = x.shape[0]  
-        noise = torch.randn(N, L, device=x.device)  # Noise [0,1]
-
-        if self.same_mask:
-        # if True:
-
-            while L % 4 != 0:
-                L += 1
-
-            L2 = L // 4             # 4 components (Original code had 3 components, but we keep 4)
-            assert 4 * L2 == L
-            noise = torch.randn(N, L2, device=x.device)  # Noise [0,1] for L2 tokens
-            ids_shuffle = torch.argsort(noise, dim=1)    # Shuffling
-            ids_shuffle = [ids_shuffle + i * L2 for i in range(3)]
-
-            ids_shuffle_keep = [z[: ,:int(L2 * (1 - mask_ratio))] for z in ids_shuffle]     # To Keep
-            ids_shuffle_disc = [z[: ,int(L2 * (1 - mask_ratio)):] for z in ids_shuffle]     # To Mask
-            ids_shuffle = []
-            for z in ids_shuffle_keep:
-                ids_shuffle.append(z)
-            for z in ids_shuffle_disc:
-                ids_shuffle.append(z)
-            ids_shuffle = torch.cat(ids_shuffle, dim=1)
-
-        else:
-            if mask is None:
-                ids_shuffle = torch.argsort(noise, dim=1)   # if no mask, noise small=keep, noise large=remove
-            else:
-                ids_shuffle = mask
+        """Perform random masking based on the mask ratio and track original indices."""
         
-        ids_restore = torch.argsort(ids_shuffle, dim=1) # For restoring the unshuffled version
+        N, L, D = x.shape 
+        len_keep = int(L * (1 - mask_ratio)) 
+        perm = torch.rand(N, L, device=x.device).argsort(dim=1)  # Random permutation of patch indices
+        ids_keep = perm[:, :len_keep]  
+        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))  # Gather kept patches
 
-        ids_keep = ids_shuffle[:,:len_keep]             # Keep 1st subset
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1,1,D))
-
-        # Binary mask: 0 = keep, 1 = remove
+        # Binary mask (1 = masked, 0 = kept)
         mask = torch.ones([N, L], device=x.device)
-        mask[:, :len_keep] = 0
-        mask = torch.gather(mask, dim=1, index=ids_restore)      # Unshuffle to get the binary mask
+        mask[:, :len_keep] = 0 
+        mask = torch.gather(mask, dim=1, index=perm)  # Restore the original order of the mask
+        ids_restore = torch.argsort(perm, dim=1)  # The original indices to restore the shuffled order
 
-        # print('Inside random masking', x_masked.shape)
         return x_masked, mask, ids_restore
+    
+    # def random_masking_with_valid_patch_exclusion(self, x, mask_ratio, valid_mask, mask=None):
+    #     """Perform random masking but exclude invalid patches from masking based on valid_mask."""
+        
+    #     N, L, D = x.shape  # N = batch size, L = number of patches, D = patch size * channels
+    #     len_keep = int(L * (1 - mask_ratio))  # Number of patches to keep
+
+    #     # Only consider valid patches for random masking
+    #     valid_indices = valid_mask.bool()  # 1 = valid, 0 = invalid
+    #     valid_patch_indices = torch.where(valid_indices)[1]  # Get indices of valid patches
+
+    #     # Generate random permutation of valid patches
+    #     perm = torch.rand(N, len(valid_patch_indices), device=x.device).argsort(dim=1)  # Random permutation of valid patches
+    #     ids_keep = valid_patch_indices[perm[:, :len_keep]]  # Select kept patches from valid patches
+
+    #     # Gather the kept patches (masking the invalid ones out)
+    #     x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))  # Gather kept patches
+        
+    #     # Generate the binary mask (1 = masked, 0 = kept)
+    #     mask = torch.ones([N, L], device=x.device)  # Initially assume everything is kept
+    #     mask[:, :len_keep] = 0  # The kept patches are marked as 0 (not masked)
+    #     mask = torch.gather(mask, dim=1, index=perm)  # Restore the original order of the mask
+
+    #     ids_restore = torch.argsort(perm, dim=1)  # The original indices to restore the shuffled order
+        
+    #     return x_masked, mask, ids_restore
+
+
+
+    # def random_masking(self, x, mask_ratio, mask=None):
+    # # def random_masking(self, x, mask_ratio, valid_patch_mask, mask=None):
+    #     """ Perform per-sample random masking by per-sample shuffling.
+    #         Per-sample shuffiling is done by argsort random noise.
+    #         x: [N,L,D], sequence
+    #         Here, we completely discard the black patches, and use only valid patches as input for- masking and shuffing ..
+    #     """
+
+    #     N, L, D = x.shape  # Batch, length, p^2 * C
+    #     len_keep = int(L * (1 - mask_ratio))
+
+    #     # valid_patch_mask = valid_patch_mask.bool()
+    #     # print(x.shape, valid_patch_mask.shape)          # [2425, 256, 48], [2425, 256]
+    #     # Remove samples with no valid patches
+    #     # valid_samples = valid_patch_mask.sum(dim=1) > 0  
+    #     # x = x[valid_samples]
+    #     # valid_patch_mask = valid_patch_mask[valid_samples]
+    #     # print(x.shape, valid_patch_mask.shape)          # [2345, 256, 48], [2345, 256]
+
+    #     # Update variables
+    #     N = x.shape[0]  
+    #     noise = torch.randn(N, L, device=x.device)  # Noise [0,1]
+
+    #     if self.same_mask:
+    #     # if True:
+
+    #         while L % 4 != 0:
+    #             L += 1
+
+    #         L2 = L // 4             # 4 components (Original code had 3 components, but we keep 4)
+    #         assert 4 * L2 == L
+    #         noise = torch.randn(N, L2, device=x.device)  # Noise [0,1] for L2 tokens
+    #         ids_shuffle = torch.argsort(noise, dim=1)    # Shuffling
+    #         ids_shuffle = [ids_shuffle + i * L2 for i in range(3)]
+
+    #         ids_shuffle_keep = [z[: ,:int(L2 * (1 - mask_ratio))] for z in ids_shuffle]     # To Keep
+    #         ids_shuffle_disc = [z[: ,int(L2 * (1 - mask_ratio)):] for z in ids_shuffle]     # To Mask
+    #         ids_shuffle = []
+    #         for z in ids_shuffle_keep:
+    #             ids_shuffle.append(z)
+    #         for z in ids_shuffle_disc:
+    #             ids_shuffle.append(z)
+    #         ids_shuffle = torch.cat(ids_shuffle, dim=1)
+
+    #     else:
+    #         if mask is None:
+    #             ids_shuffle = torch.argsort(noise, dim=1)   # if no mask, noise small=keep, noise large=remove
+    #         else:
+    #             ids_shuffle = mask
+        
+    #     ids_restore = torch.argsort(ids_shuffle, dim=1) # For restoring the unshuffled version
+
+    #     ids_keep = ids_shuffle[:,:len_keep]             # Keep 1st subset
+    #     x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1,1,D))
+
+    #     # Binary mask: 0 = keep, 1 = remove
+    #     mask = torch.ones([N, L], device=x.device)
+    #     mask[:, :len_keep] = 0
+    #     mask = torch.gather(mask, dim=1, index=ids_restore)      # Unshuffle to get the binary mask
+
+    #     # print('Inside random masking', x_masked.shape)
+    #     return x_masked, mask, ids_restore
     
     # Encoder Forward -----------------------------------------------------------------------------------
     # def forward_encoder(self, x, timestamps, mask_ratio, valid_patch_mask, mask=None):
@@ -189,17 +242,17 @@ class MaskedAutoencoderViT(nn.Module):
         
         # Patch Embeddings for all 3 temporal images
         # print('encoder forward', x.shape)
-        print('encoder forward', x[:, 0].shape)
+        # print('encoder forward', x[:, 0].shape)
         # x1 = self.patch_embed(x[:, 0])
         # x2 = self.patch_embed(x[:, 1])
         # x3 = self.patch_embed(x[:, 2])
-        x1 = self.patch_embed(x[:, :, 0])
-        x2 = self.patch_embed(x[:, :, 1])
-        x3 = self.patch_embed(x[:, :, 2])
+        x1 = self.patch_embed(x[:, 0])
+        x2 = self.patch_embed(x[:, 1])
+        x3 = self.patch_embed(x[:, 2])
         x = torch.cat([x1, x2, x3], dim=1)
         
         # Temporal Embeddings
-        print('after patch embed', x1.shape)
+        print('after patch embed 1st temporal image:', x1.shape)
         ts_embed = torch.cat([
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 0].float()),
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 1].float()),
@@ -210,16 +263,23 @@ class MaskedAutoencoderViT(nn.Module):
 
         # Add positional embedding without cls token
         x = x + torch.cat([self.pos_embed[:, 1:, :].repeat(ts_embed.shape[0], 3, 1), ts_embed], dim=-1)
+        print('x after pos encoding',x.shape)
 
         # Masking: length -> length * mask_ratio
-        x, mask, ids_restore = self.random_masking(x, mask_ratio, mask=mask)
-        # print('After random masking',x.shape)
+        x_masked, mask, ids_restore = self.random_masking(x, mask_ratio, mask=mask)
+        print('After random masking',x_masked.shape)
+
+        # if self.counter % 100 == 0:  # Visualize every 100 steps (optional, to avoid clutter)
+        #     self.visualize_masked_images(x[0], x_masked[0], mask[0])
+        # self.counter += 1
+
+        x = x_masked
 
         # Append cls token
         cls_token = self.cls_token #+ self.pos_embed[:, :1, :]
         cls_tokens = cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
-        # print('Adding cls token',x.shape)
+        print('x after adding cls token',x.shape)
 
         # Transformer blocks
         for blk in self.blocks:
@@ -231,17 +291,17 @@ class MaskedAutoencoderViT(nn.Module):
     # Decoder Forward -----------------------------------------------------------------------------------
     def forward_decoder(self, x, timestamps, ids_restore):
         
-        # print("before decoder embed",x.shape)
+        print("before decoder embed",x.shape)
         # Decoder Embeddings for tokens
         x = self.decoder_embed(x)
-        # print("before adding mask tokens",x.shape)
+        print("before adding mask tokens",x.shape)
 
         # Append mask tokens to sequence
         mask_tokens = self.mask_token.repeat(x.shape[0], ids_restore.shape[1] + 1 - x.shape[1], 1)
         x_ = torch.cat([x[:, 1:, :], mask_tokens], dim=1)                                       # No cls token
         x_ = torch.gather(x_, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]))  # Unshuffle
         x = torch.cat([x[:, :1, :], x_], dim=1)                                                 # Append cls token
-        # print("after adding mask tokens ",x.shape)
+        print("after adding mask tokens ",x.shape)
 
         assert timestamps.shape[-1] == 3, f"Expected timestamps with 3 channels, got {timestamps.shape}"
 
@@ -264,7 +324,7 @@ class MaskedAutoencoderViT(nn.Module):
             [torch.cat([self.decoder_pos_embed[:, :1, :], self.decoder_pos_embed[:, 1:, :].repeat(1, 3, 1)], dim=1).expand(ts_embed.shape[0], -1, -1),
              ts_embed], dim=-1)
         
-        # print('x before decoder transformer blocks')
+        print('x after pos embedding')
 
         # Transformer blocks
         for blk in self.decoder_blocks:
@@ -278,6 +338,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         # Remove cls token
         x = x[:, 1:, :]
+        print('x before decoder return',x.shape)
 
         return x
     
@@ -289,17 +350,28 @@ class MaskedAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove
         """
-        target1, valid_mask1 = self.patchify(images[:, 0])
-        target2, valid_mask2 = self.patchify(images[:, 1])
-        target3, valid_mask3 = self.patchify(images[:, 2])
-        # print("target1",target1.shape)
+        # target1, valid_mask1 = self.patchify(images[:, 0])
+        # target2, valid_mask2 = self.patchify(images[:, 1])
+        # target3, valid_mask3 = self.patchify(images[:, 2])
+        target1 = self.patchify(images[:, 0])
+        target2 = self.patchify(images[:, 1])
+        target3 = self.patchify(images[:, 2])
+
+        print("x after patchify: target1",target1.shape)
+
         target = torch.cat([target1, target2, target3], dim=1)
+        # valid_mask = torch.cat([valid_mask1, valid_mask2, valid_mask3], dim=1)
+
         previous_target = target
         
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
             var = target.var(dim=-1, keepdim=True)
             target = (target - mean) / (var + 1.e-6)**.5
+
+        self.visualize_images(pred, mask, previous_target, save_dir=config.mae_save_dir)
+
+        # final_mask = valid_mask * mask
         
         loss = (pred - target) ** 2
         loss = loss.mean(dim=-1)                          # [N, L], mean loss per patch
@@ -339,4 +411,48 @@ class MaskedAutoencoderViT(nn.Module):
 
         return loss, pred, mask, latent
 
-    
+
+
+    def visualize_images(self, pred, mask, previous_target, mean=None, std=None, save_dir='viz1'):
+
+        image=pred
+        bs = image.shape[0]
+        image = image.reshape(bs, 3, -1, image.shape[-1])[0]
+        image = self.unpatchify(image).detach().cpu()
+
+        save_image((image), save_dir + f'viz1/viz_{self.counter}.png')
+        masked_image,_ = self.patchify(image)
+        masked_image.reshape(-1, 768)[mask[0].bool()] = 0.5
+        masked_image = self.unpatchify(masked_image.reshape(3, -1 ,768))
+        save_image((masked_image), save_dir + f'viz1/viz_mask_{self.counter}.png')
+
+        previous_target = previous_target.reshape(bs, 3, -1, previous_target.shape[-1])[0]
+        previous_target = self.unpatchify(previous_target).detach().cpu()
+        previous_target = previous_target 
+        save_image(normalize_for_display(previous_target), save_dir + f'viz1/target_{self.counter}.png')
+
+        masked_image_target,_ = self.patchify(previous_target)
+        masked_image_target.reshape(-1, 768)[mask[0].bool()] = 0.5
+        masked_image_target = self.unpatchify(masked_image_target.reshape(3, -1 ,768))
+        save_image(normalize_for_display(masked_image_target), save_dir + f'viz1/viz_target_mask_{self.counter}.png')
+
+
+        if self.counter % 100 == 0:
+            fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+            for t in range(3):
+                axes[t].imshow(normalize_for_display(image[t]).permute(1, 2, 0))  # Convert to HWC for plotting
+                axes[t].set_title(f'Temporal Frame {t+1}')
+                axes[t].axis('off')
+            plt.tight_layout()
+            plt.show()
+
+        self.counter += 1
+
+
+
+
+
+
+
+
+

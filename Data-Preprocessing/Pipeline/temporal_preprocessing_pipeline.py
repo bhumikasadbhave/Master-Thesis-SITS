@@ -191,7 +191,7 @@ class PreProcessingPipelineTemporal:
             # Step 2: Remove border pixels
             border_removed_images = blacken_field_borders_temporal(temporal_images)
 
-            # Step 3: Remove the border pixels of the sugarbeet fields
+            # Step 3: Normalize
             normalized_images = normalize_images(border_removed_images)
 
             # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
