@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
 from timm.models.vision_transformer import PatchEmbed, Block
+from model_scripts.model_visualiser import normalize_for_display
+from torchvision.utils import save_image
 from  model_scripts.pos_embed import *
+import config
 
 class MaskedAutoencoderViT_7ts(nn.Module):
     """ Masked Autoencoder with VisionTransformer backbone
@@ -92,8 +95,8 @@ class MaskedAutoencoderViT_7ts(nn.Module):
 
         # Create valid patch mask (1 for non-zero patches, 0 for black patches)
         # A black patch is a patch with all zeros, so check if the sum of the patch is zero
-        valid_patch_mask = (x.sum(dim=-1) != 0).float()  # Shape: (B, num_patches)
-        return x , valid_patch_mask
+        # valid_patch_mask = (x.sum(dim=-1) != 0).float()  # Shape: (B, num_patches)
+        return x #, valid_patch_mask
     
     # Unpatchify -----------------------------------------------------------------------------------
     def unpatchify(self, x):
@@ -118,6 +121,24 @@ class MaskedAutoencoderViT_7ts(nn.Module):
     
     # Random Masking -----------------------------------------------------------------------------------
     def random_masking(self, x, mask_ratio, mask=None):
+        """Perform random masking based on the mask ratio and track original indices."""
+        
+        N, L, D = x.shape 
+        len_keep = int(L * (1 - mask_ratio)) 
+        perm = torch.rand(N, L, device=x.device).argsort(dim=1)  # Random permutation of patch indices
+        ids_keep = perm[:, :len_keep]  
+        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))  # Gather kept patches
+
+        # Binary mask (1 = masked, 0 = kept)
+        mask = torch.ones([N, L], device=x.device)
+        print('inside random masking: mask=',mask.shape)
+        mask[:, :len_keep] = 0 
+        mask = torch.gather(mask, dim=1, index=perm)  # Restore the original order of the mask
+        ids_restore = torch.argsort(perm, dim=1)  # The original indices to restore the shuffled order
+
+        return x_masked, mask, ids_restore
+    
+    def random_masking_old(self, x, mask_ratio, mask=None):
     # def random_masking(self, x, mask_ratio, valid_patch_mask, mask=None):
         """ Perform per-sample random masking by per-sample shuffling.
             Per-sample shuffiling is done by argsort random noise.
@@ -186,33 +207,35 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         
         # Patch Embeddings for all 3 temporal images
         print('encoder forward', x.shape)
-        print('encoder forward', x[:, :, 0].shape)
-        x1 = self.patch_embed(x[:, :, 0])
-        x2 = self.patch_embed(x[:, :, 1])
-        x3 = self.patch_embed(x[:, :, 2])
-        x4 = self.patch_embed(x[:, :, 3])
-        x5 = self.patch_embed(x[:, :, 4])
-        x6 = self.patch_embed(x[:, :, 5])
-        x7 = self.patch_embed(x[:, :, 6])
+        print('encoder forward', x[:, 0].shape)
+        x1 = self.patch_embed(x[:, 0])
+        x2 = self.patch_embed(x[:, 1])
+        x3 = self.patch_embed(x[:, 2])
+        x4 = self.patch_embed(x[:, 3])
+        x5 = self.patch_embed(x[:, 4])
+        x6 = self.patch_embed(x[:, 5])
+        x7 = self.patch_embed(x[:, 6])
 
         x = torch.cat([x1, x2, x3, x4, x5, x6, x7], dim=1)
         
         # Temporal Embeddings
-        print(timestamps.shape, x.shape)
+        print('TS: before sin cos embeddings',timestamps.shape, x.shape)
+
         ts_embed = torch.cat([
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 0].float()),
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 1].float()),
-            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps[:, :, 2].float())], dim=1).float()
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 0].float()),
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 1].float()),
+            get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 2].float())], dim=1).float()
         
-        print(ts_embed.shape)
+        print('TS: After sin cos embedding',ts_embed.shape)
         
         ts_embed = ts_embed.reshape(-1, 7, ts_embed.shape[-1]).unsqueeze(2)
-        print(ts_embed.shape)
         ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 7, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
-        print(ts_embed.shape)
+        print('TS: After reshape',ts_embed.shape)
 
         # Add positional embedding without cls token
         x = x + torch.cat([self.pos_embed[:, 1:, :].repeat(ts_embed.shape[0], 7, 1), ts_embed], dim=-1)
+
+        print('TS: final x before random masking',x.shape)
 
         # Masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio, mask=mask)
@@ -246,12 +269,11 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         x = torch.cat([x[:, :1, :], x_], dim=1)                                                 # Append cls token
         # print("after adding mask tokens ",x.shape)
 
-        assert timestamps.shape[-1] == 3, f"Expected timestamps with 3 channels, got {timestamps.shape}"
+        assert timestamps.shape[1] == 7, f"Expected timestamps with 7 channels, got {timestamps.shape}"
 
-        ts_embed = torch.cat([get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 0].float()),
-                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 1].float()),
-                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps[:, :, 2].float())
-                   ], dim=1).float()
+        ts_embed = torch.cat([get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 0].float()),
+                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 1].float()),
+                   get_1d_sincos_pos_embed_from_grid_torch(64, timestamps.reshape(-1, 3)[:, 2].float())], dim=1).float()
         
         # print("ts embedd shape before reshape",ts_embed.shape)
         # print("x before reshape",x.shape)
@@ -294,13 +316,13 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         mask: [N, L], 0 is keep, 1 is remove
         """
         print("Input shape:", images.shape)
-        target1, valid_mask1 = self.patchify(images[:, :, 0])
-        target2, valid_mask2 = self.patchify(images[:, :, 1])
-        target3, valid_mask3 = self.patchify(images[:, :, 2])
-        target4, valid_mask1 = self.patchify(images[:, :, 3])
-        target5, valid_mask2 = self.patchify(images[:, :, 4])
-        target6, valid_mask3 = self.patchify(images[:, :, 5])
-        target7, valid_mask3 = self.patchify(images[:, :, 6])
+        target1 = self.patchify(images[:, 0])
+        target2 = self.patchify(images[:, 1])
+        target3 = self.patchify(images[:, 2])
+        target4 = self.patchify(images[:, 3])
+        target5 = self.patchify(images[:, 4])
+        target6 = self.patchify(images[:, 5])
+        target7 = self.patchify(images[:, 6])
         target = torch.cat([target1, target2, target3, target4, target5, target6, target7], dim=1)
         previous_target = target
         
@@ -308,6 +330,8 @@ class MaskedAutoencoderViT_7ts(nn.Module):
             mean = target.mean(dim=-1, keepdim=True)
             var = target.var(dim=-1, keepdim=True)
             target = (target - mean) / (var + 1.e-6)**.5
+
+        self.visualize_images(pred, mask, previous_target, save_dir=config.mae_save_dir)
         
         loss = (pred - target) ** 2
         loss = loss.mean(dim=-1)                          # [N, L], mean loss per patch
@@ -347,4 +371,41 @@ class MaskedAutoencoderViT_7ts(nn.Module):
 
         return loss, pred, mask, latent
 
+    def visualize_images(self, pred, mask, previous_target, mean=None, std=None, save_dir='viz1'):
+
+        image=pred
+        bs = image.shape[0]
+        image = image.reshape(bs, 7, -1, image.shape[-1])[0]
+        image = self.unpatchify(image).detach().cpu()
+
+        save_image((image), save_dir + f'viz1/viz_{self.counter}.png')
+        print('in viz, image',image.shape)
+        masked_image = self.patchify(image)
+        print('in viz, masked image',masked_image.shape)
+        print('in viz, mask',mask.shape)
+        masked_image.reshape(-1, 768)[mask[0].bool()] = 0.5
+        masked_image = self.unpatchify(masked_image.reshape(7, -1 ,768))
+        save_image((masked_image), save_dir + f'viz1/viz_mask_{self.counter}.png')
+
+        previous_target = previous_target.reshape(bs, 7, -1, previous_target.shape[-1])[0]
+        previous_target = self.unpatchify(previous_target).detach().cpu()
+        previous_target = previous_target 
+        save_image(normalize_for_display(previous_target), save_dir + f'viz1/target_{self.counter}.png')
+
+        masked_image_target = self.patchify(previous_target)
+        masked_image_target.reshape(-1, 768)[mask[0].bool()] = 0.5
+        masked_image_target = self.unpatchify(masked_image_target.reshape(7, -1 ,768))
+        save_image(normalize_for_display(masked_image_target), save_dir + f'viz1/viz_target_mask_{self.counter}.png')
+
+
+        # if self.counter % 100 == 0:
+        #     fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+        #     for t in range(3):
+        #         axes[t].imshow(normalize_for_display(image[t]).permute(1, 2, 0))  # Convert to HWC for plotting
+        #         axes[t].set_title(f'Temporal Frame {t+1}')
+        #         axes[t].axis('off')
+            # plt.tight_layout()
+            # plt.show()
+
+        self.counter += 1
     

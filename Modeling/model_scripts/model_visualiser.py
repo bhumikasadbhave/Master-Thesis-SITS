@@ -54,6 +54,7 @@ def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, 
         for imgs, fn, timestamps in dataloader:
             imgs, timestamps = imgs.to(device), timestamps.to(device)
             loss, pred, mask, latent = model(imgs, timestamps)
+            print('recon values',pred.min(),pred.max())
 
             # print(f"Pred shape: {pred.shape}")  # (N, T*L, patch_size^2 * C)
             # print("Images shape: ", imgs.shape)  # (N, C, T, H, W)
@@ -71,7 +72,7 @@ def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, 
 
             # Stack reconstructed frames back into (N, C, T, H, W)
             recons_stacked = torch.stack(recons_per_timestep, dim=1)  # (N, T, C, H, W)
-            imgs_list.append(imgs.cpu())  # (N, C, T, H, W)
+            imgs_list.append(imgs.cpu())  # (N, T, C, H, W)
             recon_list.append(recons_stacked)  # (N, T, C, H, W)
 
             if len(imgs_list) * imgs.shape[0] >= num_images:
@@ -80,14 +81,12 @@ def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, 
     imgs = torch.cat(imgs_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
     recons = torch.cat(recon_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
 
-    imgs = imgs.permute(0, 2, 1, 3, 4)  # (num_images, T, C, H, W)
-    # recons = recons.permute(0, 2, 1, 3, 4)  # (num_images, T, C, H, W)
-
     fig, axes = plt.subplots(num_images, T * 2, figsize=(8 * T, 2 * num_images))
     for i in range(num_images):
         for t in range(T):
+            
             img = normalize_for_display(imgs[i, t])
-            recon = normalize_for_display(recons[i, t])
+            recon = (recons[i, t])
 
             axes[i, t * 2].imshow(img.permute(1, 2, 0).numpy())        # Original at t
             axes[i, t * 2 + 1].imshow(recon.permute(1, 2, 0).numpy())  # Reconstruction at t
@@ -102,7 +101,7 @@ def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, 
 def normalize_for_display(image):
     """ Adjusts brightness & contrast for visualization. """
     image = image - image.min()  # Shift to [0, max]
-    image = image / (image.max() + 1e-5)  # Normalize to [0,1]
+    image = image / (image.max() - image.min())  # Normalize to [0,1]
     return image
 
 

@@ -33,7 +33,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
     # criterion = nn.MSELoss()
     # Optimizer
     if optimizer == 'Adam':
-        optimizer = optim.AdamW(model.parameters(), lr=lr)
+        optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     else:
@@ -52,13 +52,14 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
             # print(inputs.shape)
             optimizer.zero_grad() 
             
-            with torch.amp.autocast(device_type=device):
-                loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio)
-            loss_scaler(loss, optimizer, parameters=model.parameters(), update_grad=True)
+            # with torch.amp.autocast(device_type=device):
+            #     loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio)
+            # loss_scaler(loss, optimizer, parameters=model.parameters(), update_grad=True)
 
-            # loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
-            # loss.backward()
-            # optimizer.step()
+            loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
+            print('TRAINING LOOP',loss.dtype)
+            loss.backward()
+            optimizer.step()
             train_loss += loss.item()        
         epoch_train_losses.append(train_loss / len(train_dataloader))
 
