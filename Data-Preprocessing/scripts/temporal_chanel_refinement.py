@@ -1,5 +1,6 @@
 import numpy as np
 from datetime import datetime
+import config
 
 # functions for creating model-ready data: with different NDVIs 
 
@@ -88,7 +89,7 @@ def mvi_temporal_cubes(temporal_images):
     return field_numbers, acquisition_dates, indices
 
 
-## B6 ##
+## B4 ##
 def b4_temporal_cubes(temporal_images):
     """ Create temporal cubes with all Sentinel bands excluding masks """
     cubes = []
@@ -166,6 +167,156 @@ def b10_temporal_cubes(temporal_images):
         acquisition_dates[combined_field_no] = dates
         cubes.append(temporal_cubes)
     return field_numbers, acquisition_dates, cubes
+
+
+
+def b10_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
+    """ Create temporal cubes with Sentinel bands and a single date embedding channel """
+    cubes = []
+    field_numbers = []
+    acquisition_dates = {}
+    field_idx = 0
+    
+    for temporal_stack in temporal_images:
+        temporal_cubes = []
+        dates = []
+
+        # Get field number
+        id_mask = temporal_stack[0][..., 11]  # field_id
+        field_number = np.unique(id_mask)
+        field_number = field_number[field_number != 0]  
+
+        if len(field_number) > 1:
+            combined_field_no = '_'.join(map(str, sorted(field_number)))
+        elif len(field_number) == 1:
+            combined_field_no = str(field_number[0])
+        else:
+            combined_field_no = f'{field_idx}' 
+        field_numbers.append(combined_field_no)
+
+        for image in temporal_stack:
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])  
+
+            sentinel_bands = image[..., :10]  #Shape: (H, W, 10)
+
+            # Compute single date embedding -> Add as addiional channel...
+            if method == 'single':
+                date_embedding = get_single_date_embedding(date_unique, ref_date='20190601.0')  #Scalar
+                h, w = config.patch_size
+                embedding_channel = np.full((h, w, 1), date_embedding)  #Shape: (H, W, 1)
+                augmented_bands = np.dstack((sentinel_bands, embedding_channel))  # Shape: (H, W, 11)
+
+            elif method == 'sin-cos':
+                date_embedding_sin, date_embedding_cos = get_sin_cos_date_embedding(date_unique)  #Scalar
+                h, w = config.patch_size
+                embedding_channel1 = np.full((h, w, 1), date_embedding_sin)  #Shape: (H, W, 1)
+                embedding_channel2 = np.full((h, w, 1), date_embedding_cos)  #Shape: (H, W, 1)
+                augmented_bands = np.dstack((sentinel_bands, embedding_channel1, embedding_channel2))  # Shape: (H, W, 12)
+
+            temporal_cubes.append(augmented_bands)
+            dates.append(date_unique)
+        field_idx += 1
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
+
+
+def b4_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
+    """ Create temporal cubes with all Sentinel bands excluding masks """
+    cubes = []
+    field_numbers = []
+    acquisition_dates = {}
+    field_idx=0
+    for temporal_stack in temporal_images:
+        temporal_cubes = []
+        dates = []
+
+        #Get field number
+        id_mask = temporal_stack[0][..., 11]                   # field_id
+        field_number = np.unique(id_mask)
+        field_number = field_number[field_number != 0]  
+
+        if len(field_number) > 1:
+            combined_field_no = '_'.join(map(str, sorted(field_number)))
+        elif len(field_number) == 1:
+            combined_field_no = str(field_number[0])
+        else:
+            combined_field_no = f'{field_idx}' 
+        field_numbers.append(combined_field_no)
+
+        for image in temporal_stack:
+
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
+            sentinel_bands = image[..., [0, 2, 6, 8]]  # Only channels used for calculating NDVI, EVI, MSI
+
+            # Compute single date embedding -> Add as addiional channel...
+            if method == 'single':
+                date_embedding = get_single_date_embedding(date_unique, ref_date=config.ref_date, max_val=config.max_date_diff)  #Scalar
+                h, w = config.patch_size
+                embedding_channel = np.full((h, w, 1), date_embedding)  #Shape: (H, W, 1)
+                augmented_bands = np.dstack((sentinel_bands, embedding_channel))  # Shape: (H, W, 11)
+
+            elif method == 'sin-cos':
+                date_embedding_sin, date_embedding_cos = get_sin_cos_date_embedding(date_unique)  #Scalar
+                h, w = config.patch_size
+                embedding_channel1 = np.full((h, w, 1), date_embedding_sin)  #Shape: (H, W, 1)
+                embedding_channel2 = np.full((h, w, 1), date_embedding_cos)  #Shape: (H, W, 1)
+                augmented_bands = np.dstack((sentinel_bands, embedding_channel1, embedding_channel2))  # Shape: (H, W, 12)
+
+            temporal_cubes.append(augmented_bands)
+            dates.append(date_unique)
+        field_idx+=1
+        acquisition_dates[combined_field_no] = dates
+        cubes.append(temporal_cubes)
+    return field_numbers, acquisition_dates, cubes
+
+
+
+def get_single_date_embedding(date_str, ref_date='20190601.0', max_val=365.0):
+    """ Compute a single-channel embedding for an acquisition date as a normalized scalar """
+
+    # date_int = int(date_str.split('.')[0])  # e.g., '20190604.0' -> 20190604
+    # ref_int = int(ref_date.split('.')[0])   # e.g., '20190101.0' -> 20190101
+    
+    # date_diff = (date_int - ref_int) / 10000  # Rough approximation of days (div by 10000 for yyyymmdd format)
+    # embedding = date_diff
+    
+    # return embedding
+    if date_str=='20190600.0' or date_str=='20190700.0' or date_str=='20190800.0' or date_str=='20190900.0':
+         date_str='20190601.0'
+    date = datetime.strptime(date_str, "%Y%m%d.%f")  # Parse the date string into a datetime object
+    ref = datetime.strptime(ref_date, "%Y%m%d.%f")  # Parse the reference date string
+
+    date_diff = (date - ref).days  # Get the difference in days
+    print(date_diff)
+    embedding = date_diff / max_val
+    print(embedding)
+    return embedding
+
+
+
+def get_sin_cos_date_embedding(date_str, max_val=365.0):
+    """ Compute a 2D cyclical encoding (sin, cos) for an acquisition date """
+
+    date_int = int(date_str.split('.')[0]) 
+    date_obj = datetime.strptime(str(date_int), "%Y%m%d")
+    
+    doy = date_obj.timetuple().tm_yday  # Integer in [1, 365/366]
+
+    angle = 2 * np.pi * doy / max_val
+    sin_doy = np.sin(angle)
+    cos_doy = np.cos(angle)
+
+    return sin_doy, cos_doy
+
+
 
 
 ## Other functions ##

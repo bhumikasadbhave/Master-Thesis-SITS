@@ -26,7 +26,7 @@ def visualise_single_band(spectral_image, band_index, cmap='gray'):
     """
     selected_band = spectral_image[:, :, band_index]
     normalised_band = normalise_pixels(selected_band)
-    plot_image(normalised_band, f"Sentinel-2 Band {band_index}", cmap)
+    plot_image(selected_band, f"Sentinel-2 Band {band_index}", cmap)
 
 
 def visualise_all_bands(spectral_image):

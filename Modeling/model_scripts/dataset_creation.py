@@ -22,7 +22,7 @@ class FieldDataset(Dataset):
     
 def create_data_loader(inputs, field_numbers, batch_size=32, shuffle=True):
     dataset = FieldDataset(inputs, field_numbers)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
     return dataloader
 
 

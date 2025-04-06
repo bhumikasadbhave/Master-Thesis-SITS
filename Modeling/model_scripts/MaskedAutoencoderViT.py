@@ -336,7 +336,7 @@ class MaskedAutoencoderViT(nn.Module):
         loss = (pred - target) ** 2
         loss = loss.mean(dim=-1)
 
-        # loss = (loss * mask).sum() / (mask.sum())  # mean loss on removed patches
+        loss = (loss * mask).sum() / (mask.sum())  # mean loss on removed patches
         # loss = loss.mean(dim=1)
         # print("Loss requires grad:", loss.requires_grad)  
         # print("Pred requires grad:", pred.requires_grad)
@@ -345,8 +345,8 @@ class MaskedAutoencoderViT(nn.Module):
 
         # Apply valid_patch_mask to ensure black patches don't contribute to loss
         # loss = (loss * final_mask).sum() / (final_mask).sum()
-        print("LOSS:",loss.mean())
-        return loss.mean()
+        # print("LOSS:",loss.mean())
+        return loss
 
 
     # Forward function for main class -----------------------------------------------------------------------------------

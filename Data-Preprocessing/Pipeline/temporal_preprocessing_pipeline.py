@@ -26,7 +26,7 @@ class PreProcessingPipelineTemporal:
         self.save_dir = config.save_directory_temporal
         self.load_train_dir = config.load_directory_temporal_train
         self.load_eval_dir = config.load_directory_temporal_eval
-        self.field_size = config.patch_field_size
+        self.field_size = config.patch_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
 
@@ -96,7 +96,9 @@ class PreProcessingPipelineTemporal:
             'rgb': rgb_temporal_cubes,
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
-            'b10': b10_temporal_cubes
+            'b10': b10_temporal_cubes,
+            'b10t': b10_temporal_cubes_with_temp_encoding,
+            'b4t': b4_temporal_cubes_with_temp_encoding
         }
 
         if bands not in band_selection_methods:
