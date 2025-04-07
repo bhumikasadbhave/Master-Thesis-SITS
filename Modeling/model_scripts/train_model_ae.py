@@ -33,13 +33,13 @@ def train_model_ae_old(model, dataloader, epochs=10, lr=0.001, device='mps'):
     return model, epoch_losses
 
 
-def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
+def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, weight_decay=0.01, device='mps'):
     """ Vanilla function to train the Autoencoder
     """
     # Loss and optimizer
     criterion = nn.MSELoss()
     if optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr)
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     

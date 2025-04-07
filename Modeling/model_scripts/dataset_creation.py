@@ -28,11 +28,6 @@ def create_data_loader(inputs, field_numbers, batch_size=32, shuffle=True):
 
 class FieldDatasetMAE(Dataset):
     def __init__(self, inputs, field_numbers, timestamps):
-        # if isinstance(inputs, np.ndarray):
-        # if len(inputs.shape) == 4:
-        #     inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
-        # elif len(inputs.shape) == 5:
-        #     inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
         if isinstance(inputs, np.ndarray):
             inputs = torch.tensor(inputs, dtype=torch.float32)
         self.inputs = inputs
@@ -48,8 +43,17 @@ class FieldDatasetMAE(Dataset):
     
 def create_data_loader_mae(inputs, field_numbers, timestamps, batch_size=64, shuffle=True):
     dataset = FieldDatasetMAE(inputs, field_numbers, timestamps)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=custom_collate_fn)
     return dataloader
+
+def custom_collate_fn(batch):
+    inputs, field_numbers, timestamps = zip(*batch)
+    return (
+        torch.stack(inputs),
+        str(field_numbers),
+        list(timestamps),  # Keep timestamps as list of lists
+    )
+
 
 ### --- Augmentation code --- ###
 

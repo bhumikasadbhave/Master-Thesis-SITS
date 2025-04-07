@@ -65,7 +65,7 @@ class PreProcessingPipelineTemporal:
         return success
 
     
-    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi'):
+    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi', method='single'):
         """ 
         Generalized pipeline to load the saved field patches, remove border pixels, 
         and get final model-ready temporal cube for both train and test data.
@@ -98,21 +98,26 @@ class PreProcessingPipelineTemporal:
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
             'b10t': b10_temporal_cubes_with_temp_encoding,
-            'b4t': b4_temporal_cubes_with_temp_encoding
+            'b4t': b4_temporal_cubes_with_temp_encoding,
+            'vid': temporal_vi_deltas,
+            'b10d': b10_temporal_deltas
         }
 
         if bands not in band_selection_methods:
             raise ValueError(f"Invalid bands option: {bands}")
 
-        if bands in ['indexbands', 'indexonly']:
+        if bands in ['indexbands', 'indexonly', 'vid']:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, vi_type)
+        elif bands in ['b10t','b4t']:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, method)
         else:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
 
         # Step 5: Return Temporal Cubes for training, and list of images for visualisation
         images_visualisation = indices_images
         image_tensor = np.stack(indices_images)
-        image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3)
+        if bands != 'vid':
+            image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3) # N, T, C, H, W
         
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
