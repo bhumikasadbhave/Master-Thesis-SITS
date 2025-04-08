@@ -25,8 +25,9 @@ def visualise_single_band(spectral_image, band_index, cmap='gray'):
     """ Funcrion to visulaise a single Sentinel-2 band/channel
     """
     selected_band = spectral_image[:, :, band_index]
+    print(selected_band)
     # normalised_band = normalise_pixels(selected_band)
-    plot_image(selected_band, f"Sentinel-2 Band {band_index}", cmap)
+    plot_image(selected_band, f"Sentinel-2 Band {band_index}",cmap)
 
 
 def visualise_all_bands(spectral_image):

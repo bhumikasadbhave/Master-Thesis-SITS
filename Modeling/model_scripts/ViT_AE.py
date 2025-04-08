@@ -25,7 +25,7 @@ class ViTBlock(nn.Module):
         # mask: (batch_size, num_patches) - binary mask for valid patches
 
         # Multihead Attention
-        attn_out, _ = self.attn(x, x, x, attn_mask=mask)
+        attn_out, _ = self.attn(x, x, x, key_padding_mask=mask)
         x = self.norm1(x + self.dropout(attn_out))
         
         # Feedforward Network
@@ -127,6 +127,9 @@ class ViTAutoencoder(nn.Module):
         mask = mask.view(batch_size, self.num_patches)
         mask = mask.unsqueeze(1)  # Add temporal dimension: (batch_size, T, num_patches)
         mask = mask.expand(-1, T, -1)
+        mask = mask.reshape(batch_size * T, self.num_patches)
+        mask = mask.transpose(0, 1)
+        mask = mask.to('cuda')
         # expanded_mask = mask.unsqueeze(1).expand(-1, self.num_heads, -1, -1)  # Shape: (batch_size, num_heads, T, num_patches, num_patches)
         # expanded_mask = expanded_mask.contiguous().view(batch_size * self.num_heads, T, self.num_patches, self.num_patches)
         # print(expanded_mask.shape)

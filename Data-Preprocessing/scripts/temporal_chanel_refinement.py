@@ -28,7 +28,7 @@ def mvi_temporal_cubes(temporal_images):
     np.seterr(divide='ignore', invalid='ignore')
     indices = []
     field_numbers = []
-    acquisition_dates = {}
+    acquisition_dates = []
     field_idx = 0
     for temporal_stack in temporal_images:
         temporal_indices = []
@@ -84,7 +84,7 @@ def mvi_temporal_cubes(temporal_images):
             dates.append(date_unique)
 
         field_idx+=1
-        acquisition_dates[combined_field_no] = dates
+        acquisition_dates.append(dates)
         indices.append(temporal_indices)
     return field_numbers, acquisition_dates, indices
 
@@ -94,7 +94,7 @@ def b4_temporal_cubes(temporal_images):
     """ Create temporal cubes with all Sentinel bands excluding masks """
     cubes = []
     field_numbers = []
-    acquisition_dates = {}
+    acquisition_dates = []
     field_idx=0
     for temporal_stack in temporal_images:
         temporal_cubes = []
@@ -124,7 +124,7 @@ def b4_temporal_cubes(temporal_images):
             temporal_cubes.append(sentinel_bands)
             dates.append(date_unique)
         field_idx+=1
-        acquisition_dates[combined_field_no] = dates
+        acquisition_dates.append(dates)
         cubes.append(temporal_cubes)
     return field_numbers, acquisition_dates, cubes
 
@@ -174,7 +174,7 @@ def b10_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
     """ Create temporal cubes with Sentinel bands and a single date embedding channel """
     cubes = []
     field_numbers = []
-    acquisition_dates = {}
+    acquisition_dates = []
     field_idx = 0
     
     for temporal_stack in temporal_images:
@@ -219,7 +219,7 @@ def b10_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
             temporal_cubes.append(augmented_bands)
             dates.append(date_unique)
         field_idx += 1
-        acquisition_dates[combined_field_no] = dates
+        acquisition_dates.append(dates)
         cubes.append(temporal_cubes)
     return field_numbers, acquisition_dates, cubes
 

@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -47,6 +48,7 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
     epoch_test_losses = []
     
     for epoch in range(epochs):
+        start = time.perf_counter()
         model.train()  
         train_loss = 0.0
         for inputs_cpu, field_numbers in train_dataloader:
@@ -71,6 +73,55 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
                 loss = criterion(reconstructed, inputs)
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
+        end = time.perf_counter()
+        print(f"Time taken per epoch: {end - start:.4f} seconds")
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+    return model, epoch_train_losses, epoch_test_losses
+
+
+def train_model_aelstm(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, weight_decay=0.01, device='mps'):
+    """ Function to train the Autoencoder with LSTM
+    """
+    # Loss and optimizer
+    criterion = nn.MSELoss()
+    if optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif optimizer == 'SGD':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    
+    epoch_train_losses = []
+    epoch_test_losses = []
+    
+    for epoch in range(epochs):
+        start = time.perf_counter()
+        model.train()  
+        train_loss = 0.0
+        for inputs_cpu, field_numbers, temporal_encodings in train_dataloader:
+            
+            inputs = inputs_cpu.to(device)
+            temporal_encodings = temporal_encodings.to(device)
+            latent, reconstructed = model(inputs, temporal_encodings)
+            loss = criterion(reconstructed, inputs)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            train_loss += loss.item()        
+        epoch_train_losses.append(train_loss / len(train_dataloader))
+        
+        # Evaluate on the test set
+        model.eval()  
+        test_loss = 0.0
+        with torch.no_grad():  
+            for inputs_cpu, field_numbers, temporal_encodings in test_dataloader:
+                inputs = inputs_cpu.to(device)
+                temporal_encodings = temporal_encodings.to(device)
+                latent, reconstructed = model(inputs, temporal_encodings)
+                loss = criterion(reconstructed, inputs)
+                test_loss += loss.item()
+        epoch_test_losses.append(test_loss / len(test_dataloader))
+        end = time.perf_counter()
+        print(f"Time taken per epoch: {end - start:.4f} seconds")
         print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
     return model, epoch_train_losses, epoch_test_losses
 

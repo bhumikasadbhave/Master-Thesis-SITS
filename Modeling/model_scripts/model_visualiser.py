@@ -123,9 +123,9 @@ def plot_reconstructed_images(model, dataloader, num_images=5, device='mps'):
             for i in range(num_images):
                 # Extract the first 3 channels from the first temporal image
                 original_img = inputs[i, :3, 0, :, :].permute(1, 2, 0)  # (H, W, 3)
-                original_img = normalize_for_display(original_img)
+                original_img = (original_img)
                 reconstructed_img = reconstructed[i, :3, 0, :, :].permute(1, 2, 0)  # (H, W, 3)
-                reconstructed_img = normalize_for_display(reconstructed_img)
+                reconstructed_img = (reconstructed_img)
 
                 # Plot original image
                 axes[i, 0].imshow(original_img.numpy())

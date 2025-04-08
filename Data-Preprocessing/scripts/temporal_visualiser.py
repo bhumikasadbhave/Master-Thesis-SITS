@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 from matplotlib.colors import ListedColormap
 from matplotlib.colors import Normalize
+import torch
 
 ######## Visualising Temporal Cubes - Based on Index ########
 
@@ -12,29 +13,32 @@ def visualize_temporal_stack_rgb(temporal_stack, dates=None, num_timesteps=7):
     """
     Visualize all images in a single temporal stack with RGB channels and acquisition dates as titles.
     """
-    if len(temporal_stack) != num_timesteps:
-        print(f"The provided temporal stack has {len(temporal_stack)} images, expected {num_timesteps}.")
-        return
+
+    if isinstance(temporal_stack, torch.Tensor):
+        temporal_stack = temporal_stack.detach().cpu().numpy() 
+        temporal_stack = np.transpose(temporal_stack, (0, 2, 3, 1))   # T, H, W, C
 
     fig, axes = plt.subplots(1, num_timesteps, figsize=(20, 5))
     fig.suptitle("Patch-level Temporal Stack Visualization (RGB)", fontsize=16)
     
     for i, ax in enumerate(axes):
         image = temporal_stack[i]
-        date = dates[i]
+        # date = dates[i]
         
-        if len(date) > 0:
-            int_date = int(float(date))  # yyyymmdd.0
-            year = int_date // 10000
-            month = (int_date // 100) % 100
-            day = int_date % 100
-            acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
-        else:
-            acquisition_date = "No Date"
+        # if len(date) > 0:
+        #     int_date = int(float(date))  # yyyymmdd.0
+        #     year = int_date // 10000
+        #     month = (int_date // 100) % 100
+        #     day = int_date % 100
+        #     acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
+        # else:
+        #     acquisition_date = "No Date"
         
+        print(image.shape)
         rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB: BGR -> RGB
+        ax.imshow(rgb_image)
         ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
-        ax.set_title(acquisition_date, fontsize=10)
+        ax.set_title('acquisition_date', fontsize=10)
         ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle

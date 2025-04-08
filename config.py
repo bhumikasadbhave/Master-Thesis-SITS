@@ -57,8 +57,8 @@ temporal_points = [
 ]
 
 patch_size = (64, 64)
-subpatch_size = 4
-patch_to_field_threshold = 0.1
+subpatch_size = 16
+patch_to_field_threshold = 0.5
 temporal_stack_size = 7
 ref_date = '20190601.0'
 max_date_diff = 115
