@@ -234,13 +234,10 @@ def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.00
             inputs = inputs_cpu.to(device)
             mu, log_var, z, reconstructed = model(inputs)
             
-            # Compute VAE losses
-            # recon_loss = criterion(reconstructed, inputs)
-            # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
-
+            # VAE losses
             recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
             log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability
-            # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())   ask momo  
+            # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())   #ask momo  
             kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1).mean()    #mean over batch     
             loss = recon_loss + kl_divergence
             
@@ -264,9 +261,6 @@ def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.00
                 inputs = inputs_cpu.to(device)
 
                 mu, log_var, z, reconstructed = model(inputs)
-                
-                # recon_loss = criterion(reconstructed, inputs)
-                # kl_divergence = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
 
                 recon_loss = nn.functional.mse_loss(reconstructed, inputs, reduction='sum')    #Reconstruction loss    
                 log_var = torch.clamp(log_var, min=-10)  # Prevents numerical instability

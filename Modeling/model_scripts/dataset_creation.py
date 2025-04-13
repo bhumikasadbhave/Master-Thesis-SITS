@@ -8,9 +8,9 @@ class FieldDataset(Dataset):
     def __init__(self, inputs, field_numbers):
         # if isinstance(inputs, np.ndarray):
         if len(inputs.shape) == 4:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
+            inputs = inputs.clone().detach().float().permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
         elif len(inputs.shape) == 5:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
+            inputs = inputs.clone().detach().float().permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
         #inputs = torch.tensor(inputs, dtype=torch.float32)
         self.inputs = inputs
         self.field_numbers = field_numbers       

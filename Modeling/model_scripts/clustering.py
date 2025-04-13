@@ -4,17 +4,20 @@ from sklearn.cluster import DBSCAN
 from sklearn_extra.cluster import KMedoids
 import numpy as np
 
-def train_kmeans_patches(train_patches, n_clusters, random_state=10):
+def kmeans_function(train_patches, n_clusters, random_state=10):
     """Function to apply k-means to train_patches 
     (train_patches: can be image tensors or extracted feature tensors)
     """
-    flattened_patches = train_patches.reshape(train_patches.size(0), -1).numpy()  
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
+    if isinstance(train_patches, np.ndarray):
+        flattened_patches = train_patches.reshape(train_patches.shape[0], -1)
+    else:
+        flattened_patches = train_patches.reshape(train_patches.size(0), -1).numpy()  
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
     kmeans.fit(flattened_patches)
     return kmeans
 
 
-def train_agg_clustering_patches(train_patches, n_clusters, linkage='ward'):
+def agg_clustering_function(train_patches, n_clusters, linkage='ward'):
     """Function to apply Agglomerative Clustering to train_patches
     (train_patches: can be image tensors or extracted feature tensors)
     linkage (str): The linkage criterion to use ('ward', 'complete', 'average', 'single')
@@ -25,7 +28,7 @@ def train_agg_clustering_patches(train_patches, n_clusters, linkage='ward'):
     return agg_clustering
 
 
-def train_dbscan_patches(train_patches, eps=0.5, min_samples=5):
+def db_scan_function(train_patches, eps=0.5, min_samples=5):
     """Function to apply DBSCAN to train_patches
     (train_patches: can be image tensors or extracted feature tensors)
     eps (float): The maximum distance between two samples for them to be considered as in the same neighborhood
@@ -37,7 +40,7 @@ def train_dbscan_patches(train_patches, eps=0.5, min_samples=5):
     return dbscan
 
 
-def train_kmedoids_patches(train_patches, n_clusters, random_state=10, metric='euclidean'):
+def kmedoids_function(train_patches, n_clusters, random_state=10, metric='euclidean'):
     """Function to apply K-Medoids to train_patches
     (train_patches: can be image tensors or extracted feature tensors)
     metric (str): The distance metric to use ('euclidean', 'manhattan', etc.)

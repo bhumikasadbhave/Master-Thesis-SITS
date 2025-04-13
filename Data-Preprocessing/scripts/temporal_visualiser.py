@@ -23,22 +23,24 @@ def visualize_temporal_stack_rgb(temporal_stack, dates=None, num_timesteps=7):
     
     for i, ax in enumerate(axes):
         image = temporal_stack[i]
-        # date = dates[i]
+        date = dates[i]
+        # print(date)
         
-        # if len(date) > 0:
-        #     int_date = int(float(date))  # yyyymmdd.0
-        #     year = int_date // 10000
-        #     month = (int_date // 100) % 100
-        #     day = int_date % 100
-        #     acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
-        # else:
-        #     acquisition_date = "No Date"
+        if len(date) > 0:
+            int_date = int(float(date))  # yyyymmdd.0
+            year = int_date // 10000
+            month = (int_date // 100) % 100
+            day = int_date % 100
+            if day == 0: day = 1
+            acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
+        else:
+            acquisition_date = "No Date"
         
-        print(image.shape)
+        # print(image.shape)
         rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB: BGR -> RGB
         ax.imshow(rgb_image)
         ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
-        ax.set_title('acquisition_date', fontsize=10)
+        ax.set_title(acquisition_date, fontsize=10)
         ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
