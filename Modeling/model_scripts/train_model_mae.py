@@ -7,8 +7,8 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestCentroid
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
-from  model_scripts.pos_embed import *
-from model_scripts.pos_embed import NativeScalerWithGradNormCount as NativeScaler
+from  model_scripts.mae_pos_embed import *
+from model_scripts.mae_pos_embed import NativeScalerWithGradNormCount as NativeScaler
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
 
 
