@@ -3,7 +3,7 @@ import torch.nn as nn
 from timm.models.vision_transformer import PatchEmbed, Block
 from model_scripts.model_visualiser import normalize_for_display
 from torchvision.utils import save_image
-from  model_scripts.pos_embed import *
+from  model_scripts.mae_pos_embed import *
 import config
 
 class MaskedAutoencoderViT_7ts(nn.Module):
