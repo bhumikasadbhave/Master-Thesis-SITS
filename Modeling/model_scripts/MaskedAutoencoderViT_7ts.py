@@ -131,7 +131,7 @@ class MaskedAutoencoderViT_7ts(nn.Module):
 
         # Binary mask (1 = masked, 0 = kept)
         mask = torch.ones([N, L], device=x.device)
-        print('inside random masking: mask=',mask.shape)
+        # print('inside random masking: mask=',mask.shape)
         mask[:, :len_keep] = 0 
         mask = torch.gather(mask, dim=1, index=perm)  # Restore the original order of the mask
         ids_restore = torch.argsort(perm, dim=1)  # The original indices to restore the shuffled order
@@ -206,8 +206,8 @@ class MaskedAutoencoderViT_7ts(nn.Module):
     def forward_encoder(self, x, timestamps, mask_ratio, mask=None):
         
         # Patch Embeddings for all 3 temporal images
-        print('encoder forward', x.shape)
-        print('encoder forward', x[:, 0].shape)
+        # print('encoder forward', x.shape)
+        # print('encoder forward', x[:, 0].shape)
         x1 = self.patch_embed(x[:, 0])
         x2 = self.patch_embed(x[:, 1])
         x3 = self.patch_embed(x[:, 2])
@@ -219,23 +219,23 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         x = torch.cat([x1, x2, x3, x4, x5, x6, x7], dim=1)
         
         # Temporal Embeddings
-        print('TS: before sin cos embeddings',timestamps.shape, x.shape)
+        # print('TS: before sin cos embeddings',timestamps.shape, x.shape)
 
         ts_embed = torch.cat([
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 0].float()),
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 1].float()),
             get_1d_sincos_pos_embed_from_grid_torch(128, timestamps.reshape(-1, 3)[:, 2].float())], dim=1).float()
         
-        print('TS: After sin cos embedding',ts_embed.shape)
+        # print('TS: After sin cos embedding',ts_embed.shape)
         
         ts_embed = ts_embed.reshape(-1, 7, ts_embed.shape[-1]).unsqueeze(2)
         ts_embed = ts_embed.expand(-1, -1, x.shape[1] // 7, -1).reshape(x.shape[0], -1, ts_embed.shape[-1])
-        print('TS: After reshape',ts_embed.shape)
+        # print('TS: After reshape',ts_embed.shape)
 
         # Add positional embedding without cls token
         x = x + torch.cat([self.pos_embed[:, 1:, :].repeat(ts_embed.shape[0], 7, 1), ts_embed], dim=-1)
 
-        print('TS: final x before random masking',x.shape)
+        # print('TS: final x before random masking',x.shape)
 
         # Masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio, mask=mask)
@@ -315,7 +315,7 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove
         """
-        print("Input shape:", images.shape)
+        # print("Input shape:", images.shape)
         target1 = self.patchify(images[:, 0])
         target2 = self.patchify(images[:, 1])
         target3 = self.patchify(images[:, 2])
@@ -379,10 +379,10 @@ class MaskedAutoencoderViT_7ts(nn.Module):
         image = self.unpatchify(image).detach().cpu()
 
         save_image((image), save_dir + f'viz1/viz_{self.counter}.png')
-        print('in viz, image',image.shape)
+        # print('in viz, image',image.shape)
         masked_image = self.patchify(image)
-        print('in viz, masked image',masked_image.shape)
-        print('in viz, mask',mask.shape)
+        # print('in viz, masked image',masked_image.shape)
+        # print('in viz, mask',mask.shape)
         masked_image.reshape(-1, 768)[mask[0].bool()] = 0.5
         masked_image = self.unpatchify(masked_image.reshape(7, -1 ,768))
         save_image((masked_image), save_dir + f'viz1/viz_mask_{self.counter}.png')

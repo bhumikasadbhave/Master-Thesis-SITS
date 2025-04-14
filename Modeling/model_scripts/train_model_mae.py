@@ -48,7 +48,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
         train_loss = 0.0
 
         for batch_idx, (inputs_cpu, field_numbers, timestamps) in enumerate(train_dataloader):
-            inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
+            inputs, timestamps = inputs_cpu.to(device), torch.stack(timestamps).to(device)
             # print(inputs.shape)
             optimizer.zero_grad() 
             
@@ -57,7 +57,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
             # loss_scaler(loss, optimizer, parameters=model.parameters(), update_grad=True)
 
             loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
-            print('TRAINING LOOP',loss.dtype)
+            # print('TRAINING LOOP',loss.dtype)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()        
@@ -68,7 +68,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
         test_loss = 0.0
         with torch.no_grad():
             for inputs_cpu, field_numbers, timestamps in test_dataloader: 
-                inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
+                inputs, timestamps = inputs_cpu.to(device), torch.stack(timestamps).to(device)
                 loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
@@ -83,7 +83,7 @@ def extract_latent_features_mae(model, dataloader, device):
     field_numbers_all = []
     with torch.no_grad():
         for imgs, field_numbers, timestamps in dataloader:
-            imgs, timestamps = imgs.to(device), timestamps.to(device)
+            imgs, timestamps = imgs.to(device), torch.stack(timestamps).to(device)
             _, _, _, latent = model(imgs, timestamps)  # Get latent
             latents.append(latent[:, 0, :].cpu())  # Take only the CLS token
             field_numbers_all.extend(field_numbers)

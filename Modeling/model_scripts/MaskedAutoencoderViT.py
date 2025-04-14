@@ -185,8 +185,8 @@ class MaskedAutoencoderViT(nn.Module):
         # Patch Embeddings for all 3 temporal images
         # print('encoder forward', x.shape)
         # print('encoder forward', x[:, 0].shape)
-        print("INPUTS: before encoding:", x.min(), x.max())
-        print(f"Input Tensor dtype: {x.dtype}")
+        # print("INPUTS: before encoding:", x.min(), x.max())
+        # print(f"Input Tensor dtype: {x.dtype}")
 
         x1 = self.patch_embed(x[:, 0])
         x2 = self.patch_embed(x[:, 1])
@@ -237,8 +237,8 @@ class MaskedAutoencoderViT(nn.Module):
     # Decoder Forward -----------------------------------------------------------------------------------
     def forward_decoder(self, x, timestamps, ids_restore):
 
-        print("LATENT: Latents after encoding:", x.min(), x.max())
-        print(f"Latent Tensor dtype: {x.dtype}")
+        # print("LATENT: Latents after encoding:", x.min(), x.max())
+        # print(f"Latent Tensor dtype: {x.dtype}")
         # mean = x.mean()
         # std = x.std()
         # x = (x - mean) / std
@@ -294,10 +294,10 @@ class MaskedAutoencoderViT(nn.Module):
         x = x[:, 1:, :]
         x = x.float()
         # print('x before decoder return',x.shape)
-        print("RECONSTRUCTIONS: after decoding:", x.min(), x.max())
-        print(f"Reconstruction Tensor dtype: {x.dtype}") 
+        # print("RECONSTRUCTIONS: after decoding:", x.min(), x.max())
+        # print(f"Reconstruction Tensor dtype: {x.dtype}") 
         x = torch.sigmoid(x)
-        print("RECONSTRUCTIONS: after sigmoid:", x.min(), x.max())
+        # print("RECONSTRUCTIONS: after sigmoid:", x.min(), x.max())
 
         self.dec_count+=x.max()>0.5
         return x
@@ -330,7 +330,7 @@ class MaskedAutoencoderViT(nn.Module):
             target = (target - mean) / (var + 1.e-6)**.5
         
 
-        self.visualize_images(pred, mask, previous_target, save_dir=config.mae_save_dir)
+        # self.visualize_images(pred, mask, previous_target, save_dir=config.mae_save_dir)
 
         # final_mask = valid_mask * mask
         loss = (pred - target) ** 2
@@ -365,7 +365,7 @@ class MaskedAutoencoderViT(nn.Module):
         latent, mask, ids_restore = self.forward_encoder(imgs, timestamps, mask_ratio, mask=mask)
         pred = self.forward_decoder(latent, timestamps, ids_restore)  # [N, L, p*p*3]
         loss = self.forward_loss(imgs, pred, mask)
-        print('DECODER COUNT',self.dec_count)
+        # print('DECODER COUNT',self.dec_count)
         # print("Loss requires grad in main forward:", loss.requires_grad)  
         # loss = self.forward_loss(imgs, pred, mask, valid_patch_mask)
 
@@ -383,14 +383,9 @@ class MaskedAutoencoderViT(nn.Module):
         bs = image.shape[0]
         image = image.reshape(bs, 3, -1, image.shape[-1])[0]
         image = self.unpatchify(image).detach().cpu()
-        print("Reconstructed min:", image.min().item())
-        print("Reconstructed max:", image.max().item())
 
         save_image((image), save_dir + f'viz1/viz_{self.counter}.png')
-        print('in viz, image',image.shape)
         masked_image = self.patchify(image)
-        print('in viz, masked image',masked_image.shape)
-        print('in viz, mask',mask.shape)
         masked_image.reshape(-1, 768)[mask[0].bool()] = 0.5
         masked_image = self.unpatchify(masked_image.reshape(3, -1 ,768))
         save_image((masked_image), save_dir + f'viz1/viz_mask_{self.counter}.png')

@@ -2,6 +2,7 @@ from ast import List, Tuple
 from ctypes import Union
 import math
 import random
+import warnings
 from typing import Optional
 import warnings
 import matplotlib.pyplot as plt
@@ -47,60 +48,6 @@ def plot_loss_log_scale(train_loss, test_loss, title="Training vs Test Loss (Log
     plt.show()
 
 
-def visualize_temporal_reconstructions(model, dataloader, device, num_images=5, T=3):
-    """ Visualizes reconstructed images over multiple temporal frames.
-    """
-    model.eval()
-    imgs_list, recon_list = [], []
-
-    with torch.no_grad():
-        for imgs, fn, timestamps in dataloader:
-            imgs, timestamps = imgs.to(device), timestamps.to(device)
-            loss, pred, mask, latent = model(imgs, timestamps)
-            print('recon values',pred.min(),pred.max())
-
-            # print(f"Pred shape: {pred.shape}")  # (N, T*L, patch_size^2 * C)
-            # print("Images shape: ", imgs.shape)  # (N, C, T, H, W)
-
-            # Reshape pred from (N, T*L, P^2*C) to (N, T, L, P^2*C)
-            N, L_total, O = pred.shape
-            L = L_total // T  # Number of patches per image -> (should be 64)
-            pred = pred.reshape(N, T, L, O)
-            # print("Reshaped pred:", pred.shape)  # (N, T, L, P^2 * C)
-
-            recons_per_timestep = []
-            for t in range(T):
-                recon_t = model.unpatchify(pred[:, t])  # (N, C, H, W)
-                recons_per_timestep.append(recon_t.cpu())
-
-            # Stack reconstructed frames back into (N, C, T, H, W)
-            recons_stacked = torch.stack(recons_per_timestep, dim=1)  # (N, T, C, H, W)
-            imgs_list.append(imgs.cpu())  # (N, T, C, H, W)
-            recon_list.append(recons_stacked)  # (N, T, C, H, W)
-
-            if len(imgs_list) * imgs.shape[0] >= num_images:
-                break
-
-    imgs = torch.cat(imgs_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
-    recons = torch.cat(recon_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
-
-    fig, axes = plt.subplots(num_images, T * 2, figsize=(8 * T, 2 * num_images))
-    for i in range(num_images):
-        for t in range(T):
-            
-            img = normalize_for_display(imgs[i, t])
-            recon = (recons[i, t])
-
-            axes[i, t * 2].imshow(img.permute(1, 2, 0).numpy())        # Original at t
-            axes[i, t * 2 + 1].imshow(recon.permute(1, 2, 0).numpy())  # Reconstruction at t
-            axes[i, t * 2].axis('off')
-            axes[i, t * 2 + 1].axis('off')
-            axes[i, t * 2].set_title(f"Original T{t}")
-            axes[i, t * 2 + 1].set_title(f"Reconstruction T{t}")
-
-    plt.show()
-
-
 def normalize_for_display(image):
     """ Adjusts brightness & contrast for visualization. """
     image = image - image.min()  # Shift to [0, max]
@@ -108,7 +55,7 @@ def normalize_for_display(image):
     return image
 
 
-#### Functions for plotting reconstructions ####
+#### ----------------------------------- Functions for plotting reconstructions ------------------------------------ ####
 
 def plot_reconstructed_subpatches(model, dataloader, num_images=5, temporal_index=0, device='mps'):
     """Plots original and reconstructed subpatches side by side"""
@@ -250,3 +197,61 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
         plt.tight_layout()
         plt.subplots_adjust(top=0.9) 
         plt.show()
+
+
+
+#### ----------------------------------- Functions for plotting MAE reconstructions ------------------------------------ ####
+
+def visualize_temporal_reconstructions_mae(model, dataloader, device, num_images=5, T=3):
+    """ Visualizes reconstructed images over multiple temporal frames.
+    """
+    model.eval()
+    imgs_list, recon_list = [], []
+
+    with torch.no_grad():
+        for imgs, fn, timestamps in dataloader:
+            imgs, timestamps = imgs.to(device), torch.stack(timestamps).to(device)
+            loss, pred, mask, latent = model(imgs, timestamps)
+            print('recon values',pred.min(),pred.max())
+
+            # print(f"Pred shape: {pred.shape}")  # (N, T*L, patch_size^2 * C)
+            # print("Images shape: ", imgs.shape)  # (N, C, T, H, W)
+
+            # Reshape pred from (N, T*L, P^2*C) to (N, T, L, P^2*C)
+            N, L_total, O = pred.shape
+            L = L_total // T  # Number of patches per image -> (should be 64)
+            pred = pred.reshape(N, T, L, O)
+            # print("Reshaped pred:", pred.shape)  # (N, T, L, P^2 * C)
+
+            recons_per_timestep = []
+            for t in range(T):
+                recon_t = model.unpatchify(pred[:, t])  # (N, C, H, W)
+                recons_per_timestep.append(recon_t.cpu())
+
+            # Stack reconstructed frames back into (N, C, T, H, W)
+            recons_stacked = torch.stack(recons_per_timestep, dim=1)  # (N, T, C, H, W)
+            imgs_list.append(imgs.cpu())  # (N, T, C, H, W)
+            recon_list.append(recons_stacked)  # (N, T, C, H, W)
+
+            if len(imgs_list) * imgs.shape[0] >= num_images:
+                break
+
+    imgs = torch.cat(imgs_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
+    recons = torch.cat(recon_list, dim=0)[:num_images]  # (num_images, C, T, H, W)
+
+    fig, axes = plt.subplots(num_images, T * 2, figsize=(8 * T, 2 * num_images))
+    for i in range(num_images):
+        for t in range(T):
+            
+            img = normalize_for_display(imgs[i, t])
+            recon = (recons[i, t])
+
+            axes[i, t * 2].imshow(img.permute(1, 2, 0).numpy())        # Original at t
+            axes[i, t * 2 + 1].imshow(recon.permute(1, 2, 0).numpy())  # Reconstruction at t
+            axes[i, t * 2].axis('off')
+            axes[i, t * 2 + 1].axis('off')
+            axes[i, t * 2].set_title(f"Original T{t}")
+            axes[i, t * 2 + 1].set_title(f"Reconstruction T{t}")
+
+    plt.show()
+
