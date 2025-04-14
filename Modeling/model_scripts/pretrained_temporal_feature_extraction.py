@@ -5,8 +5,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from einops import rearrange
 from transformers import ViTModel, ViTConfig
-from torchgeo.models import resnet18
-from torchgeo.models import ResNet18_Weights
+from torchgeo.models import resnet18, ResNet18_Weights
 from torchvision.models.video import r3d_18, R3D_18_Weights
 from transformers import TimesformerModel
 from torchvision.models import resnet50
@@ -138,10 +137,9 @@ class VisionTransformerExtractor(nn.Module):
 
 
 # 3. Spectral Sentinel-2 Resnet-18
-
 class SpectralSentinel2FeatureExtractor(nn.Module):
     def __init__(self, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_ALL_MOCO):
-        super(SpectralSentinel2FeatureExtractor, self).__init__()
+        super().__init__()
         
         self.model = resnet18(weights=pretrained_weights)
         
