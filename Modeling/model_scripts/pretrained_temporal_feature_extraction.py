@@ -19,7 +19,7 @@ from skimage.feature import hog
 from skimage import color
 
 
-###### ----------------- Classical techniques for feature extraction ----------------- ######
+###### -------------------------- Classical techniques for feature extraction -------------------------- ######
 
 # 1. Channel-wise histogram features
 def extract_channel_histograms(data, bins=256):
@@ -80,7 +80,7 @@ def extract_sift_features(data):
     return sift_features
 
 
-# 4. HOG features -- not used
+# 4. HOG features --> not used
 def extract_hog_features(data, pixels_per_cell=(2, 2), cells_per_block=(2, 2), visualize=False):
 
     hog_features = []
@@ -103,7 +103,7 @@ def extract_hog_features(data, pixels_per_cell=(2, 2), cells_per_block=(2, 2), v
     return hog_features
 
 
-###### ----------------- Pre-trained models for feature extraction ----------------- #######
+###### -------------------------- Pre-trained models for feature extraction -------------------------- #######
 
 # 1. ResNet3D for Spatiotemporal Feature Extraction
 class ResNet3DFeatureExtractor(nn.Module):
@@ -119,24 +119,7 @@ class ResNet3DFeatureExtractor(nn.Module):
         return self.resnet3d(x)
 
 
-# 2. Vision Transformer Feature Extractor
-class VisionTransformerExtractor(nn.Module):
-    def __init__(self, pretrained_model_name="google/vit-base-patch16-224-in21k"):
-        super().__init__()
-        self.transformer = ViTModel.from_pretrained(pretrained_model_name)
-        self.pool = nn.AdaptiveAvgPool1d(1)
-
-    def forward(self, x):
-        x = x[:, :3, :, :, :]
-        b, c, t, h, w = x.shape
-        x = x.reshape(b * t, c, h, w)                       # Flatten temporal axis
-        x = self.transformer(x).last_hidden_state[:, 0, :]  # Extract CLS token
-        x = x.view(b, t, -1)                                # Reshape back (batch, timesteps, features)
-        x = self.pool(x.permute(0, 2, 1)).squeeze(-1)       # Pooling over time
-        return x
-
-
-# 3. Spectral Sentinel-2 Resnet-18
+# 2. Spectral Sentinel-2 Resnet-18
 class SpectralSentinel2FeatureExtractor(nn.Module):
     def __init__(self, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_ALL_MOCO):
         super().__init__()
@@ -166,6 +149,22 @@ class SpectralSentinel2FeatureExtractor(nn.Module):
     def forward(self, x):
         return self.feature_extractor(x)
 
+
+# 3. Vision Transformer Feature Extractor
+class VisionTransformerExtractor(nn.Module):
+    def __init__(self, pretrained_model_name="google/vit-base-patch16-224-in21k"):
+        super().__init__()
+        self.transformer = ViTModel.from_pretrained(pretrained_model_name)
+        self.pool = nn.AdaptiveAvgPool1d(1)
+
+    def forward(self, x):
+        x = x[:, :3, :, :, :]
+        b, c, t, h, w = x.shape
+        x = x.reshape(b * t, c, h, w)                       # Flatten temporal axis
+        x = self.transformer(x).last_hidden_state[:, 0, :]  # Extract CLS token
+        x = x.view(b, t, -1)                                # Reshape back (batch, timesteps, features)
+        x = self.pool(x.permute(0, 2, 1)).squeeze(-1)       # Pooling over time
+        return x
 
 
 ## Utility functions --------------------------------------------------------------------------------------
