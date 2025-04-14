@@ -5,8 +5,13 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from einops import rearrange
 from transformers import ViTModel, ViTConfig
+from torchgeo.models import resnet18
+from torchgeo.models import ResNet18_Weights
+from torchvision.models.video import r3d_18, R3D_18_Weights
 from transformers import TimesformerModel
+from torchvision.models import resnet50
 from transformers import AutoModel
+import torch.nn.functional as F
 from sklearn.decomposition import PCA
 import timm
 import cv2
@@ -15,8 +20,47 @@ from skimage.feature import hog
 from skimage import color
 
 
-###### Classical CV techniques for feature extraction ######
-# 1. SIFT features
+###### ----------------- Classical techniques for feature extraction ----------------- ######
+
+# 1. Channel-wise histogram features
+def extract_channel_histograms(data, bins=256):
+    """ Returns: numpy array of shape (N, T, C * bins): Flattened histograms per time step and channel"""
+
+    N, T, C, H, W = data.shape
+    all_features = []
+    for i in range(N):
+        sample_feats = []
+        for t in range(T):
+            for c in range(C):
+                channel_data = data[i, t, c] 
+                valid_pixels = channel_data[channel_data != 0]
+                hist, _ = np.histogram(valid_pixels, bins=bins, range=(1e-6, 1)) 
+                hist = hist.astype(np.float32)  
+                hist /= hist.sum()
+                sample_feats.extend(hist.tolist()) 
+        all_features.append(sample_feats)
+
+    return np.array(all_features)
+
+
+# 2. Feature reduction using PCA on the channel dimension of Sentinel-2 data
+def pca_feature_extraction(data, n_components=3):
+   
+    N, T, C, H, W = data.shape
+    reshaped = data.permute(0, 1, 3, 4, 2).reshape(-1, C) # Shape: (N*T*H*W, C)
+    valid_mask = ~(reshaped == 0).all(axis=1)        # Remove zero pixels
+    valid_pixels = reshaped[valid_mask]
+    valid_pixels_np = valid_pixels.cpu().numpy()
+
+    # Apply PCA across channels
+    pca = PCA(n_components=n_components)
+    transformed = pca.fit_transform(valid_pixels_np)
+    top_channel_indices = np.argsort(np.abs(pca.components_), axis=1)[:, ::-1]
+
+    return pca, transformed, top_channel_indices
+
+
+# 3. SIFT features --> not used
 def extract_sift_features(data):
 
     sift = cv2.SIFT_create()
@@ -37,7 +81,7 @@ def extract_sift_features(data):
     return sift_features
 
 
-# 2. HOG features
+# 4. HOG features -- not used
 def extract_hog_features(data, pixels_per_cell=(2, 2), cells_per_block=(2, 2), visualize=False):
 
     hog_features = []
@@ -60,51 +104,14 @@ def extract_hog_features(data, pixels_per_cell=(2, 2), cells_per_block=(2, 2), v
     return hog_features
 
 
-# 3. Channel-wise histogram features
-def extract_channel_histograms(data, bins=256):
-    """ Returns: numpy array of shape (N, T, C * bins): Flattened histograms per time step and channel"""
+###### ----------------- Pre-trained models for feature extraction ----------------- #######
 
-    N, T, C, H, W = data.shape
-    all_features = []
-    for i in range(N):
-        sample_feats = []
-        for t in range(T):
-            for c in range(C):
-                channel_data = data[i, t, c] 
-                valid_pixels = channel_data[channel_data != 0]
-                hist, _ = np.histogram(valid_pixels, bins=bins, range=(1e-6, 1)) 
-                hist = hist.astype(np.float32)  
-                hist /= hist.sum()
-                sample_feats.extend(hist.tolist()) 
-        all_features.append(sample_feats)
-
-    return np.array(all_features)
-
-
-# 4. Feature reduction using PCA on the channel dimension of Sentinel-2 data
-def pca_feature_extraction(data, n_components=3):
-   
-    N, T, C, H, W = data.shape
-    reshaped = data.permute(0, 1, 3, 4, 2).reshape(-1, C) # Shape: (N*T*H*W, C)
-    valid_mask = ~(reshaped == 0).all(axis=1)        # Remove zero pixels
-    valid_pixels = reshaped[valid_mask]
-    valid_pixels_np = valid_pixels.cpu().numpy()
-
-    # Apply PCA across channels
-    pca = PCA(n_components=n_components)
-    transformed = pca.fit_transform(valid_pixels_np)
-    top_channel_indices = np.argsort(np.abs(pca.components_), axis=1)[:, ::-1]
-
-    return pca, transformed, top_channel_indices
-
-
-
-###### Pre-trained models for feature extraction #######
 # 1. ResNet3D for Spatiotemporal Feature Extraction
 class ResNet3DFeatureExtractor(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet3d = models.video.r3d_18(pretrained=True)
+        weights = R3D_18_Weights.DEFAULT 
+        self.resnet3d = r3d_18(weights=weights)
         self.resnet3d.fc = nn.Identity()
 
     def forward(self, x):
@@ -130,69 +137,40 @@ class VisionTransformerExtractor(nn.Module):
         return x
 
 
-# 3. Spectral Sentinel-2 ViT with time as channels
-class Sentinel2ViTFeatureExtractor(nn.Module):
-    def __init__(self, time_steps, in_channels, model_name="duygu/sentinel2-vit"):
-        super().__init__()
-        self.time_steps = time_steps
-        self.in_channels = in_channels
-        self.total_channels = time_steps * in_channels
+# 3. Spectral Sentinel-2 Resnet-18
 
-        # Load pretrained ViT config & model
-        self.vit = ViTModel.from_pretrained(model_name)
-        config = self.vit.config
-
-        # Modify input embedding layer to accept more channels
-        old_conv = self.vit.embeddings.patch_embeddings.projection      # Conv2d layer
-        self.vit.embeddings.patch_embeddings.projection = nn.Conv2d(
-            in_channels=self.total_channels,
-            out_channels=old_conv.out_channels,
-            kernel_size=old_conv.kernel_size,
-            stride=old_conv.stride,
-            padding=old_conv.padding
+class SpectralSentinel2FeatureExtractor(nn.Module):
+    def __init__(self, num_channels, pretrained_weights=ResNet18_Weights.SENTINEL2_ALL_MOCO):
+        super(SpectralSentinel2FeatureExtractor, self).__init__()
+        
+        self.model = resnet18(weights=pretrained_weights)
+        
+        # Modify the first convolution layer to accept the specified number of channels
+        original_conv1 = self.model.conv1
+        new_conv1 = nn.Conv2d(
+            in_channels=num_channels,
+            out_channels=original_conv1.out_channels,
+            kernel_size=original_conv1.kernel_size,
+            stride=original_conv1.stride,
+            padding=original_conv1.padding,
+            bias=original_conv1.bias is not None,
         )
-
-        # Reinitialize the new conv layer weights
-        nn.init.kaiming_normal_(self.vit.embeddings.patch_embeddings.projection.weight, mode='fan_out', nonlinearity='relu')
-
+        
+        with torch.no_grad():                                       #Reinitialize weights
+            new_conv1.weight[:, :3] = original_conv1.weight[:, :3]
+            if num_channels > 3:
+                new_conv1.weight[:, 3:] = torch.randn_like(new_conv1.weight[:, 3:]) * 0.01
+        self.model.conv1 = new_conv1
+        
+        # Remove the final fully connected layer to get features
+        self.feature_extractor = nn.Sequential(*list(self.model.children())[:-1])
+    
     def forward(self, x):
-        b, t, c, h, w = x.shape
-        x = x.view(b, t * c, h, w)          # Flatten time and channel dims -> (B, T×C, H, W)
-        outputs = self.vit(pixel_values=x)
-        return outputs.last_hidden_state    # (batch, seq_len, hidden_dim)
+        return self.feature_extractor(x)
 
 
 
-## remove? --------------------------------------------------------------------------------------
-
-# Pretrained Timesformer
-class PretrainedTimeSformerFeatureExtractor1(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.timesformer = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400")
-        self.timesformer.config.use_cache = False  
-
-    def forward(self, x):
-        x = x.permute(0, 2, 1, 3, 4)   # (batch_size, seq_length, channels, height, width)
-        inputs = {'pixel_values': x}
-        # print(f"Inputs for TimeSformer: {x.shape}")  
-        outputs = self.timesformer(**inputs)
-        return outputs.last_hidden_state 
-
-
-# earthformer
-class PretrainedEarthformerFeatureExtractor(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.earthformer = AutoModel.from_pretrained("OpenClimateFix/earthformer-base")
-
-    def forward(self, x):
-        # input: (batch, time, channels, height, width)
-        x = x.permute(0, 2, 1, 3, 4) 
-        inputs = {'pixel_values': x}
-        outputs = self.earthformer(**inputs)
-        return outputs.last_hidden_state
-
+## Utility functions --------------------------------------------------------------------------------------
 
 def extract_features(model, dataloader, device):
     model.to(device)
@@ -225,4 +203,12 @@ def resize_images_transfer_learning(images, size=(224, 224)):
             resized_images_t.append(image_resized_tensor)
         resized_images.append(torch.cat(resized_images_t, dim=0))  # Concatenate across the time dimension (T)
     return torch.stack(resized_images, dim=0)
+
+
+def resize_images_multichannel(images, size=(224, 224)):
+    N, T, C, H, W = images.shape
+    images = images.view(N * T, C, H, W)
+    images_resized = F.interpolate(images, size=size, mode='bilinear', align_corners=False)
+    return images_resized.view(N, T, C, size[0], size[1])
+
 

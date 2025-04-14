@@ -33,6 +33,11 @@ kmeans_vi_path = '/home/k64835/SITS-models/baseline_cv/kmeans_vi.pkl'
 kmeans_hist_path = '/home/k64835/SITS-models/baseline_cv/kmeans_hist.pkl'
 kmeans_pca_path = '/home/k64835/SITS-models/baseline_cv/kmeans_hog.pkl'
 
+#### Trained Model Save Paths: Pre-trained models feature extraction (Baseline 3) ####
+resnet3D_path = '/home/k64835/SITS-models/baseline_pretrained/resnet_3D.pkl'
+vit_imagenet_path = '/home/k64835/SITS-models/baseline_pretrained/vit_imagenet.pkl'
+sentinel_vit_path = '/home/k64835/SITS-models/baseline_pretrained/sentinel_vit.pkl'
+
 #### Trained Model Save Paths: Autoencoders main ####
 kmeans_ae_3D_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D.pkl'
 kmeans_ae_2D_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_2D.pkl'
