@@ -7,6 +7,8 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestCentroid
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
+from  model_scripts.mae_pos_embed import *
+from model_scripts.mae_pos_embed import NativeScalerWithGradNormCount as NativeScaler
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
 
 
@@ -39,19 +41,23 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
 
     epoch_train_losses = []
     epoch_test_losses = []
+    loss_scaler = NativeScaler()
 
     for epoch in range(epochs):
         model.train()  
         train_loss = 0.0
 
-        for inputs_cpu, field_numbers, timestamps in train_dataloader:
-            inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
+        for batch_idx, (inputs_cpu, field_numbers, timestamps) in enumerate(train_dataloader):
+            inputs, timestamps = inputs_cpu.to(device), torch.stack(timestamps).to(device)
             # print(inputs.shape)
             optimizer.zero_grad() 
+            
+            # with torch.amp.autocast(device_type=device):
+            #     loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio)
+            # loss_scaler(loss, optimizer, parameters=model.parameters(), update_grad=True)
+
             loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
-            # print(latent.shape) 
-            # print("Loss requires grad:", loss.requires_grad)
-            # print("Pred requires grad:", pred.requires_grad)
+            # print('TRAINING LOOP',loss.dtype)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()        
@@ -62,8 +68,7 @@ def train_model_mae(model, train_dataloader, test_dataloader, epochs=10, masking
         test_loss = 0.0
         with torch.no_grad():
             for inputs_cpu, field_numbers, timestamps in test_dataloader: 
-                inputs, timestamps = inputs_cpu.to(device), timestamps.to(device)
-
+                inputs, timestamps = inputs_cpu.to(device), torch.stack(timestamps).to(device)
                 loss, pred, mask, latent = model(inputs, timestamps, mask_ratio=masking_ratio) 
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
@@ -78,10 +83,9 @@ def extract_latent_features_mae(model, dataloader, device):
     field_numbers_all = []
     with torch.no_grad():
         for imgs, field_numbers, timestamps in dataloader:
-            imgs, timestamps = imgs.to(device), timestamps.to(device)
+            imgs, timestamps = imgs.to(device), torch.stack(timestamps).to(device)
             _, _, _, latent = model(imgs, timestamps)  # Get latent
             latents.append(latent[:, 0, :].cpu())  # Take only the CLS token
             field_numbers_all.extend(field_numbers)
     return torch.cat(latents, dim=0), field_numbers_all
-
 

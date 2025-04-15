@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
+def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5, num_encoding_channels=0):
     """
     Apply non-overlapping sliding window to extract sub-patches, filter out zero-only sub-patches,
     and pad sub-patches with the avg(pixels) if they contain any zeros. Track the field numbers.
@@ -15,29 +15,35 @@ def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5):
     patches = []
     patch_coordinates = []
     batch_size, time, channels, height, width = image_data.shape
+    early_channel_limit = channels - num_encoding_channels
     
     for b in range(batch_size):  
         field_number = field_numbers[b]  
 
         for i in range(0, height - patch_size + 1, patch_size): 
-            for j in range(0, width - patch_size + 1, patch_size):  
+            for j in range(0, width - patch_size + 1, patch_size):          
 
-                patch = image_data[b, :, :, i:i + patch_size, j:j + patch_size]   # Extract patches across all channels and time steps in one go
-
+                patch = image_data[b, :, :, i:i + patch_size, j:j + patch_size]   #[time, channels, patch_size, patch_size]
+                
                 if not isinstance(patch, torch.Tensor):
                     patch = torch.tensor(patch)
-                if torch.any(patch > 0):  
-                    patch1 = patch.clone() 
 
-                    # Calculate channel-wise mean for non-zero values
-                    for t in range(time):  
-                        for c in range(channels):  
-                            channel_patch = patch1[t, c]            # Extract channel and time!
-                            if torch.any(channel_patch > 0):  
-                                avg_val = torch.mean(channel_patch[channel_patch > 0])
-                                channel_patch[channel_patch == 0] = avg_val  
-                    patches.append(patch1)
-                    patch_coordinates.append((field_number, i, j))  
+                early_channels = patch[:, :early_channel_limit]
+
+                if torch.all(early_channels == 0):      # Discard patch if it has all zeros
+                    continue                
+
+                patch1 = patch.clone() 
+
+                # Calculate channel-wise mean for non-zero values where there the patches are partially zero
+                for t in range(time):  
+                    for c in range(early_channel_limit):  
+                        channel_patch = patch1[t, c]            # Extract channel and time!
+                        if torch.any(channel_patch > 0):  
+                            avg_val = torch.mean(channel_patch[channel_patch > 0])
+                            channel_patch[channel_patch == 0] = avg_val  
+                patches.append(patch1)
+                patch_coordinates.append((field_number, i, j))  
                         
     return torch.stack(patches), patch_coordinates
 

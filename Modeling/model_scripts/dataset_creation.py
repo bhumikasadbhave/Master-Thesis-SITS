@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -7,9 +8,10 @@ class FieldDataset(Dataset):
     def __init__(self, inputs, field_numbers):
         # if isinstance(inputs, np.ndarray):
         if len(inputs.shape) == 4:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
+            inputs = inputs
+            # inputs = inputs.clone().detach().float().permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
         elif len(inputs.shape) == 5:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
+            inputs = inputs.clone().detach().float().permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
         #inputs = torch.tensor(inputs, dtype=torch.float32)
         self.inputs = inputs
         self.field_numbers = field_numbers       
@@ -22,18 +24,14 @@ class FieldDataset(Dataset):
     
 def create_data_loader(inputs, field_numbers, batch_size=32, shuffle=True):
     dataset = FieldDataset(inputs, field_numbers)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
     return dataloader
 
 
 class FieldDatasetMAE(Dataset):
     def __init__(self, inputs, field_numbers, timestamps):
-        # if isinstance(inputs, np.ndarray):
-        if len(inputs.shape) == 4:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)      # (N, H, W, C) -> (N, C, H, W) -> to account for non-temporal data
-        elif len(inputs.shape) == 5:
-            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)   # (N, T, C, H, W) -> (N, C, T, H, W)
-        #inputs = torch.tensor(inputs, dtype=torch.float32)
+        if isinstance(inputs, np.ndarray):
+            inputs = torch.tensor(inputs, dtype=torch.float32)
         self.inputs = inputs
         self.field_numbers = field_numbers 
         if timestamps is not None:
@@ -47,8 +45,71 @@ class FieldDatasetMAE(Dataset):
     
 def create_data_loader_mae(inputs, field_numbers, timestamps, batch_size=64, shuffle=True):
     dataset = FieldDatasetMAE(inputs, field_numbers, timestamps)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=custom_collate_fn)
     return dataloader
+
+def custom_collate_fn(batch):
+    inputs, field_numbers, timestamps = zip(*batch)
+    return (
+        torch.stack(inputs),
+        str(field_numbers),
+        list(timestamps),  # Keep timestamps as list of lists
+    )
+
+
+### --- Dataset for LSTM code --- ###
+
+class FieldDatasetLSTM(Dataset):
+    def __init__(self, inputs, field_numbers, acquisition_dates, max_val=365):
+        """
+        Args:
+            inputs (tensor): The input data (4D or 5D tensor).
+            field_numbers (tensor): The field numbers for each sample.
+            acquisition_dates (list): A list of lists, each containing 7 acquisition dates per sample.
+            max_val (int): The max value for the sin/cos encoding (typically 365 for days in a year).
+        """
+        if len(inputs.shape) == 4:
+            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+        elif len(inputs.shape) == 5:
+            inputs = torch.tensor(inputs, dtype=torch.float32).permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) -> (N, C, T, H, W)
+        self.inputs = inputs
+        self.field_numbers = field_numbers
+        self.acquisition_dates = acquisition_dates
+        self.max_val = max_val
+
+    def __len__(self):
+        return len(self.inputs)
+    
+    def get_sin_cos_date_embedding(self, date_str):
+        date_int = int(date_str.split('.')[0])
+        date_obj = datetime.strptime(str(date_int), "%Y%m%d")
+        doy = date_obj.timetuple().tm_yday  # Integer in [1, 365/366]
+        angle = 2 * np.pi * doy / self.max_val
+        sin_doy = np.sin(angle)
+        cos_doy = np.cos(angle)
+        normalized_sin = (sin_doy + 1) / 2
+        normalized_cos = (cos_doy + 1) / 2
+        return normalized_sin, normalized_cos
+    
+
+    def __getitem__(self, idx):
+        input_image = self.inputs[idx]
+        date_list = self.acquisition_dates[idx]
+        temporal_encodings = []
+        for date_str in date_list:
+            sin_emb, cos_emb = self.get_sin_cos_date_embedding(date_str)
+            temporal_encodings.append([sin_emb, cos_emb])  
+        temporal_encodings = torch.tensor(temporal_encodings, dtype=torch.float32)
+        return input_image, self.field_numbers[idx], temporal_encodings
+    
+
+def create_data_loader_aelstm(inputs, field_numbers, acquisition_dates, batch_size=32, shuffle=True, max_val=365):
+    """ Create DataLoader with temporal encodings included. """
+    dataset = FieldDatasetLSTM(inputs, field_numbers, acquisition_dates, max_val)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True)
+    return dataloader
+
+
 
 ### --- Augmentation code --- ###
 

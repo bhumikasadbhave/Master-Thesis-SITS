@@ -26,7 +26,7 @@ class PreProcessingPipelineTemporal:
         self.save_dir = config.save_directory_temporal
         self.load_train_dir = config.load_directory_temporal_train
         self.load_eval_dir = config.load_directory_temporal_eval
-        self.field_size = config.patch_field_size
+        self.field_size = config.patch_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
 
@@ -65,7 +65,7 @@ class PreProcessingPipelineTemporal:
         return success
 
     
-    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi'):
+    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi', method='single'):
         """ 
         Generalized pipeline to load the saved field patches, remove border pixels, 
         and get final model-ready temporal cube for both train and test data.
@@ -96,21 +96,29 @@ class PreProcessingPipelineTemporal:
             'rgb': rgb_temporal_cubes,
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
-            'b10': b10_temporal_cubes
+            'b10': b10_temporal_cubes,
+            'b10t': b10_temporal_cubes_with_temp_encoding,
+            'b4t': b4_temporal_cubes_with_temp_encoding
+            # 'mvit': mvi_temporal_cubes_with_temp_encoding
+            # 'vid': temporal_vi_deltas,
+            # 'b10d': b10_temporal_deltas
         }
 
         if bands not in band_selection_methods:
             raise ValueError(f"Invalid bands option: {bands}")
 
-        if bands in ['indexbands', 'indexonly']:
+        if bands in ['indexbands', 'indexonly', 'vid']:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, vi_type)
+        elif bands in ['b10t','b4t']:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, method)
         else:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
 
         # Step 5: Return Temporal Cubes for training, and list of images for visualisation
         images_visualisation = indices_images
         image_tensor = np.stack(indices_images)
-        image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3)
+        if bands != 'vid':
+            image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3) # N, T, C, H, W
         
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
@@ -191,7 +199,7 @@ class PreProcessingPipelineTemporal:
             # Step 2: Remove border pixels
             border_removed_images = blacken_field_borders_temporal(temporal_images)
 
-            # Step 3: Remove the border pixels of the sugarbeet fields
+            # Step 3: Normalize
             normalized_images = normalize_images(border_removed_images)
 
             # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands

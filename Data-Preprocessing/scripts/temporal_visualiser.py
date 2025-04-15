@@ -3,45 +3,83 @@ import numpy as np
 from datetime import datetime
 from matplotlib.colors import ListedColormap
 from matplotlib.colors import Normalize
+import torch
 
 ######## Visualising Temporal Cubes - Based on Index ########
 
+
 # RGB
-def visualize_temporal_stack_rgb(temporal_stack, dates):
+def visualize_temporal_stack_rgb(temporal_stack, dates=None, num_timesteps=7):
     """
     Visualize all images in a single temporal stack with RGB channels and acquisition dates as titles.
-    Args: temporal_stack (list): A single temporal stack (7), image - (H, W, C), last channel - acquisition dates in yyyymmdd.0
     """
-    if len(temporal_stack) != 7:
-        print(f"The provided temporal stack has {len(temporal_stack)} images, expected 7.")
-        return
 
-    fig, axes = plt.subplots(1, 7, figsize=(20, 5))
-    fig.suptitle("Patch-level Temporal Stack Visualization (RGB) (Field 1168039)", fontsize=16)
+    if isinstance(temporal_stack, torch.Tensor):
+        temporal_stack = temporal_stack.detach().cpu().numpy() 
+        temporal_stack = np.transpose(temporal_stack, (0, 2, 3, 1))   # T, H, W, C
+
+    fig, axes = plt.subplots(1, num_timesteps, figsize=(20, 5))
+    fig.suptitle("Patch-level Temporal Stack Visualization (RGB)", fontsize=16)
     
     for i, ax in enumerate(axes):
         image = temporal_stack[i]
         date = dates[i]
+        # print(date)
         
         if len(date) > 0:
-            int_date = int(float(date)) # yyyymmdd.0
+            int_date = int(float(date))  # yyyymmdd.0
             year = int_date // 10000
             month = (int_date // 100) % 100
             day = int_date % 100
+            if day == 0: day = 1
             acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
         else:
             acquisition_date = "No Date"
         
-        # Visualize RGB 
-        rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB
+        # print(image.shape)
+        rgb_image = np.stack([image[..., 2], image[..., 1], image[..., 0]], axis=-1)    # RGB: BGR -> RGB
+        ax.imshow(rgb_image)
         ax.imshow(np.clip(rgb_image / np.max(rgb_image), 0, 1), cmap='viridis')         # Normalize for display
         ax.set_title(acquisition_date, fontsize=10)
-        # ax.axis("off")
-        ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
-        ax.set_yticks([0, 10, 20, 30, 40, 50, 60])
+        ax.axis("off")
     
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
     plt.show()
+
+
+# VI Differences
+def visualize_ndvi_difference(temporal_stack, num_timesteps=6):
+    """
+    Visualize NDVI difference images in a temporal stack with acquisition dates as titles.
+    Args:
+        temporal_stack (list): A list of NDVI difference images (H, W) for each timestep.
+        dates (list): A list of dates corresponding to each image in temporal_stack.
+        num_timesteps (int): The number of timesteps to visualize (default is 6).
+    """
+    fig, axes = plt.subplots(1, num_timesteps, figsize=(20, 5))
+    fig.suptitle("NDVI Difference Visualization (Temporal Stack)", fontsize=16)
+    
+    for i, ax in enumerate(axes):
+        image = temporal_stack[i]
+        # date = dates[i]
+        
+        # if len(date) > 0:
+        #     int_date = int(float(date))  # yyyymmdd.0
+        #     year = int_date // 10000
+        #     month = (int_date // 100) % 100
+        #     day = int_date % 100
+        #     acquisition_date = datetime(year, month, day).strftime("%Y-%m-%d")
+        # else:
+        #     acquisition_date = "No Date"
+        
+        im = ax.imshow(image)  # Use a colormap that works for NDVI-like data
+        ax.set_title('ndvi diff', fontsize=10)
+        ax.axis("off")
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout for the subtitle
+    plt.show()
+
+
 
 # NDVI
 def visualize_temporal_stack_ndvi(temporal_stack, dates):

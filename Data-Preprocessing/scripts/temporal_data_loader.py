@@ -97,7 +97,7 @@ def get_temporal_stack(temporal_image_folder, sugarbeet_mask, id_mask):
 #Helper funtion
 def get_date_mask(date, sugarbeet_mask):
     """Creates a Date Mask of dimension same as sugarbeet_mask. 
-       The pixels have value 0.yyyymmdd where sugarbeet_mask > 0 else 0
+       The pixels have value yyyymmdd.0 where sugarbeet_mask > 0 else 0
     """
     year, month, day,_,_,_ = date.split("_")
     date_value = float(f"{year}{int(month):02d}{int(day):02d}.0")
