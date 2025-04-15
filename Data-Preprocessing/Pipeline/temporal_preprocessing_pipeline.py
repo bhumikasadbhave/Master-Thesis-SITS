@@ -98,10 +98,8 @@ class PreProcessingPipelineTemporal:
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
             'b10t': b10_temporal_cubes_with_temp_encoding,
-            'b4t': b4_temporal_cubes_with_temp_encoding
-            # 'mvit': mvi_temporal_cubes_with_temp_encoding
-            # 'vid': temporal_vi_deltas,
-            # 'b10d': b10_temporal_deltas
+            'b4t': b4_temporal_cubes_with_temp_encoding,
+            'b10+t': b10_temporal_cubes_with_temp_encoding_added_to_bands
         }
 
         if bands not in band_selection_methods:

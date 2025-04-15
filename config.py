@@ -53,6 +53,10 @@ vae_2D_path = '/home/k64835/SITS-models/baseline_ae/vae_2D.pkl'
 kmeans_ae_3D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TS.pkl'
 ae_3d_TE_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TE.pkl'
 
+kmeans_ae_3D_TEadd_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
+ae_3d_TEadd_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
+
+
 
 mae_save_dir = '/home/k64835/'
 
