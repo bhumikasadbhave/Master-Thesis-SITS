@@ -103,41 +103,77 @@ def plot_reconstructed_subpatches_temporal(model, dataloader, num_images=5, devi
     indices = random.sample(range(config.batch_size), num_images)
 
     with torch.no_grad():
-        for inputs_cpu, _ in dataloader:
+        if model_type in ['ae','vae']:
+            for inputs_cpu, _ in dataloader:
 
-            inputs = inputs_cpu.to(device)
-            if model_type=='ae':
-                _, reconstructed = model(inputs)
-            elif model_type=='vae':
-                _,_,_, reconstructed = model(inputs)
-            inputs = inputs.cpu()
-            reconstructed = reconstructed.cpu()
-            temporal_len = inputs.shape[2]  
+                inputs = inputs_cpu.to(device)
+                if model_type=='ae':
+                    _, reconstructed = model(inputs)
+                elif model_type=='vae':
+                    _,_,_, reconstructed = model(inputs)
 
-            for i, index in enumerate(indices):
-                fig, axes = plt.subplots(2, temporal_len, figsize=(3 * temporal_len, 6))
+                inputs = inputs.cpu()
+                reconstructed = reconstructed.cpu()
+                temporal_len = inputs.shape[2]  
 
-                for t in range(temporal_len):
-                    # Original
-                    original_img = inputs[index, :3, t, :, :].permute(1, 2, 0)  # (H, W, 3)
-                    original_img = normalize_for_display(original_img)
+                for i, index in enumerate(indices):
+                    fig, axes = plt.subplots(2, temporal_len, figsize=(3 * temporal_len, 6))
 
-                    # Reconstructed
-                    reconstructed_img = reconstructed[index, :3, t, :, :].permute(1, 2, 0)
-                    reconstructed_img = normalize_for_display(reconstructed_img)
+                    for t in range(temporal_len):
+                        # Original
+                        original_img = inputs[index, :3, t, :, :].permute(1, 2, 0)  # (H, W, 3)
+                        original_img = normalize_for_display(original_img)
 
-                    axes[0, t].imshow(original_img.numpy())
-                    axes[0, t].set_title(f"Original T{t}")
-                    axes[0, t].axis("off")
+                        # Reconstructed
+                        reconstructed_img = reconstructed[index, :3, t, :, :].permute(1, 2, 0)
+                        reconstructed_img = normalize_for_display(reconstructed_img)
 
-                    axes[1, t].imshow(reconstructed_img.numpy())
-                    axes[1, t].set_title(f"Reconstructed T{t}")
-                    axes[1, t].axis("off")
+                        axes[0, t].imshow(original_img.numpy())
+                        axes[0, t].set_title(f"Original T{t}")
+                        axes[0, t].axis("off")
 
-                plt.tight_layout()
-                plt.show()
+                        axes[1, t].imshow(reconstructed_img.numpy())
+                        axes[1, t].set_title(f"Reconstructed T{t}")
+                        axes[1, t].axis("off")
 
-            break  # Only take the first batch
+                    plt.tight_layout()
+                    plt.show()
+
+                break  # Only take the first batch
+        
+        elif model_type in ['ae_te']:
+            for inputs_cpu, _, date_embeddings in dataloader:
+
+                inputs = inputs_cpu.to(device)
+                _, reconstructed = model(inputs, date_embeddings)
+                inputs = inputs.cpu()
+                reconstructed = reconstructed.cpu()
+                temporal_len = inputs.shape[2]  
+
+                for i, index in enumerate(indices):
+                    fig, axes = plt.subplots(2, temporal_len, figsize=(3 * temporal_len, 6))
+
+                    for t in range(temporal_len):
+                        # Original
+                        original_img = inputs[index, :3, t, :, :].permute(1, 2, 0)  # (H, W, 3)
+                        original_img = normalize_for_display(original_img)
+
+                        # Reconstructed
+                        reconstructed_img = reconstructed[index, :3, t, :, :].permute(1, 2, 0)
+                        reconstructed_img = normalize_for_display(reconstructed_img)
+
+                        axes[0, t].imshow(original_img.numpy())
+                        axes[0, t].set_title(f"Original T{t}")
+                        axes[0, t].axis("off")
+
+                        axes[1, t].imshow(reconstructed_img.numpy())
+                        axes[1, t].set_title(f"Reconstructed T{t}")
+                        axes[1, t].axis("off")
+
+                    plt.tight_layout()
+                    plt.show()
+
+                break  # Only take the first batch
 
 
 def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_fields=5, device='cuda', model_type='ae'):
@@ -147,24 +183,43 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
     recon_dict = {}         #format: field_number → [(x, y, recon_patch),..]
 
     #Collect all reconstructions grouped by field numbers
-    for idx in range(len(dataloader.dataset)):
-        inputs, patch_id_xy = dataloader.dataset[idx]
-        inputs = inputs.unsqueeze(0).to(device)
+    if model_type in ['ae','vae']:
+        for idx in range(len(dataloader.dataset)):
+            inputs, patch_id_xy = dataloader.dataset[idx]
+            inputs = inputs.unsqueeze(0).to(device)
 
-        with torch.no_grad():
-            if model_type=='ae':
-                _, outputs = model(inputs)
-            elif model_type == 'vae':
-                _, _, _, outputs = model(inputs)
-                
-        outputs = outputs.cpu().squeeze(0)          # [C, T, 4, 4]
-        id_coords = patch_id_xy.split('_')
-        x, y = int(id_coords[-2]), int(id_coords[-1])
-        field_number = '_'.join(id_coords[:-2])
+            with torch.no_grad():
+                if model_type=='ae':
+                    _, outputs = model(inputs)
+                elif model_type == 'vae':
+                    _, _, _, outputs = model(inputs)
+                    
+            outputs = outputs.cpu().squeeze(0)          # [C, T, 4, 4]
+            id_coords = patch_id_xy.split('_')
+            x, y = int(id_coords[-2]), int(id_coords[-1])
+            field_number = '_'.join(id_coords[:-2])
 
-        if field_number not in recon_dict:
-            recon_dict[field_number] = []
-        recon_dict[field_number].append((x, y, outputs[:3])) 
+            if field_number not in recon_dict:
+                recon_dict[field_number] = []
+            recon_dict[field_number].append((x, y, outputs[:3])) 
+    
+    elif model_type in ['ae_te']:
+        for idx in range(len(dataloader.dataset)):
+            inputs, patch_id_xy, date_emb = dataloader.dataset[idx]
+            inputs = inputs.unsqueeze(0).to(device)
+            date_emb = torch.tensor(date_emb).unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                _, outputs = model(inputs, date_emb)
+                    
+            outputs = outputs.cpu().squeeze(0)          # [C, T, 4, 4]
+            id_coords = patch_id_xy.split('_')
+            x, y = int(id_coords[-2]), int(id_coords[-1])
+            field_number = '_'.join(id_coords[:-2])
+
+            if field_number not in recon_dict:
+                recon_dict[field_number] = []
+            recon_dict[field_number].append((x, y, outputs[:3])) 
 
     #Visualise random field numbers
     chosen_fields = random.sample(list(recon_dict.keys()), num_fields)

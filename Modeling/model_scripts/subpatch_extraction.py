@@ -49,6 +49,52 @@ def non_overlapping_sliding_window(image_data, field_numbers, patch_size=5, num_
 
 
 
+def non_overlapping_sliding_window_with_date_emb(image_data, field_numbers, date_embeddings, patch_size=5, num_encoding_channels=0):
+    """
+    Apply non-overlapping sliding window to extract sub-patches, filter out zero-only sub-patches,
+    and pad sub-patches with the avg(pixels) if they contain any zeros. Track the field numbers.
+    """
+    patches = []
+    patch_coordinates = []
+    date_embeds_all = []
+    batch_size, time, channels, height, width = image_data.shape
+    early_channel_limit = channels - num_encoding_channels
+    
+    for b in range(batch_size):  
+        field_number = field_numbers[b]
+        date_embeds = date_embeddings[b]  # Shape: (T, 2) [sin, cos for each time step]  
+
+        for i in range(0, height - patch_size + 1, patch_size): 
+            for j in range(0, width - patch_size + 1, patch_size):          
+
+                patch = image_data[b, :, :, i:i + patch_size, j:j + patch_size]   #[time, channels, patch_size, patch_size]
+                
+                if not isinstance(patch, torch.Tensor):
+                    patch = torch.tensor(patch)
+
+                early_channels = patch[:, :early_channel_limit]
+
+                if torch.all(early_channels == 0):      # Discard patch if it has all zeros
+                    continue                
+
+                patch1 = patch.clone() 
+
+                # Calculate channel-wise mean for non-zero values where there the patches are partially zero
+                for t in range(time):  
+                    for c in range(early_channel_limit):  
+                        channel_patch = patch1[t, c]            # Extract channel and time!
+                        if torch.any(channel_patch > 0):  
+                            avg_val = torch.mean(channel_patch[channel_patch > 0])
+                            channel_patch[channel_patch == 0] = avg_val  
+                patches.append(patch1)
+                patch_coordinates.append((field_number, i, j))  
+
+                # Add the date embeddings for this patch to the list
+                date_embeds_all.append(date_embeds)
+                        
+    return torch.stack(patches), patch_coordinates, date_embeds_all
+
+
 def non_overlapping_sliding_window_non_temporal(image_data, field_numbers, patch_size=5):
     """
     Apply non-overlapping sliding window to extract sub-patches, filter out zero-only sub-patches,

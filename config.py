@@ -3,17 +3,24 @@ sentinel_image_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/
 sentinel_mask_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Data-Sample/1100x1100/sentinel2_masks'  
 sentinel_id_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Data-Sample/1100x1100/sentinel2_ids'
 
+
+### --- Paths for field extraction and saving from 1000x1000 images --- ###
+
 #temporal raw images path
-sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/first-10'
+sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/'
+sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/eval/'
 
 #Path to the base directory where image patches of extracted fields/patches are to be saved
-save_directory_temporal = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data-Temporal'
+save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Train'
+save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
+
 
 #### Local Paths to save extracted patch level images
 # base_directory_temporal_train1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
 # base_directory_temporal_test1 = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
 
-#### Server Paths ####
+
+#### --- Server Paths --- ####
 load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
 load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
 images_save_path = '/home/k64835/SITS-images/output/'
@@ -22,6 +29,8 @@ labels_path = '/home/k64835/SITS-images/labels.csv'
 fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
 # labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
+#### Filtering fields that are not sugarbeet 
+sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"
 
 #### Trained Model Save Paths: Clustering Algorithms (Baseline 1) ####
 kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'
@@ -52,6 +61,10 @@ vae_2D_path = '/home/k64835/SITS-models/baseline_ae/vae_2D.pkl'
 #### Best performing Autoencoder with Temporal Encodings (Final Model) ####
 kmeans_ae_3D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TS.pkl'
 ae_3d_TE_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TE.pkl'
+
+kmeans_ae_3D_TEadd_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
+ae_3d_TEadd_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
+
 
 
 mae_save_dir = '/home/k64835/'

@@ -169,7 +169,6 @@ def b10_temporal_cubes(temporal_images):
     return field_numbers, acquisition_dates, cubes
 
 
-
 def b10_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
     """ Create temporal cubes with Sentinel bands and a single date embedding channel """
     cubes = []
@@ -295,9 +294,9 @@ def get_single_date_embedding(date_str, ref_date='20190601.0', max_val=106):
     ref = datetime.strptime(ref_date, "%Y%m%d.%f")  # Parse the reference date string
 
     date_diff = (date - ref).days  # Get the difference in days
-    print(date_diff)
+    # print(date_diff)
     embedding = date_diff / max_val
-    print(embedding)
+    # print(embedding)
     return embedding
 
 
@@ -318,6 +317,73 @@ def get_sin_cos_date_embedding(date_str, max_val=106):
     normalized_sin = (sin_doy + 1) / 2
     normalized_cos = (cos_doy + 1) / 2
     return normalized_sin, normalized_cos
+
+
+
+def b10_temporal_cubes_with_temp_encoding_added_to_bands(temporal_images, method='sin-cos'):
+    """Create temporal cubes with Sentinel bands by adding date embedding values directly to bands"""
+    cubes = []
+    field_numbers = []
+    acquisition_dates = []
+    all_date_embeddings = []
+    field_idx = 0
+
+    for temporal_stack in temporal_images:
+        temporal_cubes = []
+        dates = []
+        date_embeddings = []
+
+        # Get field number
+        id_mask = temporal_stack[0][..., 11]  # field_id
+        field_number = np.unique(id_mask)
+        field_number = field_number[field_number != 0]
+
+        if len(field_number) > 1:
+            combined_field_no = '_'.join(map(str, sorted(field_number)))
+        elif len(field_number) == 1:
+            combined_field_no = str(field_number[0])
+        else:
+            combined_field_no = f'{field_idx}'
+        field_numbers.append(combined_field_no)
+
+        for image in temporal_stack:
+            date_mask = image[..., -1]
+            date = np.unique(date_mask)
+            date_unique = date[date != 0]
+            date_unique = str(date_unique[0])
+
+            sentinel_bands = image[..., :10]  # Shape: (H, W, 10)
+
+            # --- Temporal encoding to be ADDED to existing pixel values ---
+            if method == 'single':
+                date_embedding = get_single_date_embedding(date_unique, ref_date='20190601.0')  # scalar
+                # encoded = sentinel_bands + date_embedding
+                date_embeddings.append(date_embedding)
+
+            elif method == 'sin-cos':
+                sin_emb, cos_emb = get_sin_cos_date_embedding(date_unique)                      # both scalars
+                # encoded = sentinel_bands + sin_emb + cos_emb
+                date_embeddings.append([sin_emb,cos_emb])
+
+            else:
+                raise ValueError(f"Unknown method '{method}' for temporal encoding.")
+
+            # --- Re-normalize back to [0, 1] ---
+            # encoded = np.clip(encoded, 0, None)  # avoid negatives before normalization
+            # min_val = np.min(encoded)
+            # max_val = np.max(encoded)
+            # normalized_encoded = (encoded - min_val) / (max_val - min_val + 1e-8)
+
+            temporal_cubes.append(sentinel_bands)
+            dates.append(date_unique)
+
+        field_idx += 1
+        acquisition_dates.append(dates)
+        all_date_embeddings.append(date_embeddings)
+        cubes.append(temporal_cubes)
+
+    return field_numbers, acquisition_dates, all_date_embeddings, cubes
+
 
 
 

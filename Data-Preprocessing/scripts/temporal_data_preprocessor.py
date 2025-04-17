@@ -2,6 +2,7 @@ import numpy as np
 from datetime import datetime
 from skimage.measure import label, regionprops
 from scipy.ndimage import binary_erosion
+import pandas as pd
 
 
 def mask_images_temporal(images):
@@ -210,6 +211,20 @@ def normalize_images(temporal_images):
             field_normalized_images.append(normalized_temporal_image)
         normalized_images.append(field_normalized_images)
     return normalized_images
+
+
+def filter_non_sugarbeet_fields(temporal_images, sugarbeet_content_csv_path):
+    """Based on the provied csv, remove the fields which are non-sugarbeet-fields"""
+
+    sugarbeet_df = pd.read_csv(sugarbeet_content_csv_path)
+    valid_fields = set(sugarbeet_df['FIELDUSNO'].astype(int).unique())
+    filtered_images = []
+    for img in temporal_images:
+        field_numbers = np.unique(img[0][:, :, -2])
+        non_zero_fields = field_numbers[field_numbers != 0]
+        if any(fn in valid_fields for fn in non_zero_fields):       #keep the images with atleast 1 valid field number
+            filtered_images.append(img)
+    return filtered_images
 
 
 # Function to get the Non-temporal instances for extracted patches. They are later used for performing preliminary test 

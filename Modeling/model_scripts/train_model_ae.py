@@ -11,13 +11,13 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
 
 
-def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, weight_decay=0.01, device='mps'):
+def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
     """ Vanilla function to train the Autoencoder
     """
     # Loss and optimizer
     criterion = nn.MSELoss()
     if optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
     
@@ -56,19 +56,121 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
     return model, epoch_train_losses, epoch_test_losses
 
 
+### --- AE with Time encodings as channels --- ###
+def train_model_ae_te(model, train_dataloader, test_dataloader, out_channels=10, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
+    """ Vanilla function to train the Autoencoder
+    """
+    # Loss and optimizer
+    criterion = nn.MSELoss()
+    if optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer == 'SGD':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    
+    epoch_train_losses = []
+    epoch_test_losses = []
+    
+    for epoch in range(epochs):
+        start = time.perf_counter()
+        model.train()  
+        train_loss = 0.0
+        for inputs_cpu, field_numbers in train_dataloader:
+            
+            inputs = inputs_cpu.to(device)
+            latent, reconstructed = model(inputs)
+            loss = criterion(reconstructed, inputs[:, :out_channels])
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
 
-def extract_features_ae(model, dataloader, device='mps'):
+            train_loss += loss.item()        
+        epoch_train_losses.append(train_loss / len(train_dataloader))
+        
+        # Evaluate on the test set
+        model.eval()  
+        test_loss = 0.0
+        with torch.no_grad():  
+            for inputs_cpu, field_numbers in test_dataloader:
+                inputs = inputs_cpu.to(device)
+                latent, reconstructed = model(inputs)
+                loss = criterion(reconstructed, inputs[:, :out_channels])
+                test_loss += loss.item()
+        epoch_test_losses.append(test_loss / len(test_dataloader))
+        end = time.perf_counter()
+        print(f"Time taken per epoch: {end - start:.4f} seconds")
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+    return model, epoch_train_losses, epoch_test_losses
+
+
+
+### --- AE with pixel-level Time encodings--- ###
+def train_model_ae_te_pixel(model, train_dataloader, test_dataloader, out_channels=10, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
+    """ Vanilla function to train the Autoencoder
+    """
+    # Loss and optimizer
+    criterion = nn.MSELoss()
+    if optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer == 'SGD':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    
+    epoch_train_losses = []
+    epoch_test_losses = []
+    
+    for epoch in range(epochs):
+        start = time.perf_counter()
+        model.train()  
+        train_loss = 0.0
+        for inputs_cpu, field_numbers, date_embeddings in train_dataloader:
+            
+            inputs = inputs_cpu.to(device)
+            latent, reconstructed = model(inputs, date_embeddings)
+            loss = criterion(reconstructed, inputs)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            train_loss += loss.item()        
+        epoch_train_losses.append(train_loss / len(train_dataloader))
+        
+        # Evaluate on the test set
+        model.eval()  
+        test_loss = 0.0
+        with torch.no_grad():  
+            for inputs_cpu, field_numbers, date_embeddings in test_dataloader:
+                inputs = inputs_cpu.to(device)
+                latent, reconstructed = model(inputs, date_embeddings)
+                loss = criterion(reconstructed, inputs)
+                test_loss += loss.item()
+        epoch_test_losses.append(test_loss / len(test_dataloader))
+        end = time.perf_counter()
+        print(f"Time taken per epoch: {end - start:.4f} seconds")
+        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+    return model, epoch_train_losses, epoch_test_losses
+
+
+def extract_features_ae(model, dataloader, temp_embed_pixel=False, device='mps'):
     """ Get latent bottleneck vectors (as features) using only the trained encoder
     """
     features = []
-    field_numbers_all = []
     model.eval()
     with torch.no_grad():
-        for inputs_cpu, field_numbers in dataloader:
-            inputs = inputs_cpu.to(device)
-            latent, _ = model(inputs)
-            features.append(latent.view(latent.size(0), -1))
-            field_numbers_all.extend(field_numbers)
+        if not temp_embed_pixel:
+            field_numbers_all = []
+            for inputs_cpu, field_numbers in dataloader:
+                inputs = inputs_cpu.to(device)
+                latent, _ = model(inputs)
+                features.append(latent.view(latent.size(0), -1))
+                field_numbers_all.extend(field_numbers)
+        else:
+            field_numbers_all = []
+            for inputs_cpu, field_numbers, date_emb in dataloader:
+                inputs = inputs_cpu.to(device)
+                # print(len(field_numbers[0]))
+                latent, _ = model(inputs, date_emb)
+                features.append(latent.view(latent.size(0), -1))
+                field_numbers_all.extend(field_numbers)
+
     return torch.cat(features), field_numbers_all
 
 

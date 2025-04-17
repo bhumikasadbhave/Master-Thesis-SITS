@@ -47,7 +47,7 @@ def visualise_all_bands(spectral_image):
         elif i==10:
             band_name = 'Cloud Mask'
         elif i==11:
-            band_name = 'Sugarbeet Mask'
+            band_name = 'Sugarbeet Field Number Mask'
         else:
             band_name = f"Sentinel Band {i+2}"
             
