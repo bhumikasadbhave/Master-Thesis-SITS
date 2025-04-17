@@ -110,9 +110,9 @@ class PreProcessingPipelineTemporal:
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
-            'b10_channel': b10_temporal_cubes_with_temp_encoding,
-            'b4_channel': b4_temporal_cubes_with_temp_encoding,
-            'b10_add': b10_temporal_cubes_with_temp_encoding_added_to_bands
+            'b10_channel': b10_temporal_cubes_with_temp_encoding,       # temporal encodings as 2 extra channels
+            'b4_channel': b4_temporal_cubes_with_temp_encoding,         # temporal encodings as 2 extra channels
+            'b10_add': b10_temporal_cubes_with_temp_encoding_returned   # temporal encodings returned for addition in autoencoder
         }
 
         if bands not in band_selection_methods:
@@ -177,7 +177,7 @@ class PreProcessingPipelineTemporal:
             'b10': b10_temporal_cubes,
             'b10_channel': b10_temporal_cubes_with_temp_encoding,
             'b4_channel': b4_temporal_cubes_with_temp_encoding,
-            'b10_add': b10_temporal_cubes_with_temp_encoding_added_to_bands
+            'b10_add': b10_temporal_cubes_with_temp_encoding_returned
         }
 
         if bands not in band_selection_methods:

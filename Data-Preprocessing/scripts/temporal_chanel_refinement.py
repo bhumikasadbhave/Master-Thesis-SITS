@@ -320,7 +320,7 @@ def get_sin_cos_date_embedding(date_str, max_val=106):
 
 
 
-def b10_temporal_cubes_with_temp_encoding_added_to_bands(temporal_images, method='sin-cos'):
+def b10_temporal_cubes_with_temp_encoding_returned(temporal_images, method='sin-cos'):
     """Create temporal cubes with Sentinel bands by adding date embedding values directly to bands"""
     cubes = []
     field_numbers = []
