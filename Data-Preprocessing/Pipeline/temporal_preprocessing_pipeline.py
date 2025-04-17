@@ -24,9 +24,10 @@ class PreProcessingPipelineTemporal:
         #Get values from Config file
         self.sentinel_base_path = config.sentinel_base_path
         self.sentinel_base_path_eval = config.sentinel_base_path_eval
-        self.save_dir = config.save_directory_temporal
         self.load_train_dir = config.load_directory_temporal_train
         self.load_eval_dir = config.load_directory_temporal_eval
+        self.save_directory_temporal_train = config.save_directory_temporal_train
+        self.save_directory_temporal_eval = config.save_directory_temporal_eval
         self.field_size = config.patch_size
         self.temporal_stack_size = config.temporal_stack_size
         self.date_ranges = config.temporal_points
@@ -58,9 +59,9 @@ class PreProcessingPipelineTemporal:
 
         # Step 5: Define the base directory to save patches
         if type == 'train':
-            fields_base_directory = config.save_directory_temporal_train
+            fields_base_directory = self.save_directory_temporal_train
         elif type == 'eval':
-            fields_base_directory = config.save_directory_temporal_eval
+            fields_base_directory = self.save_directory_temporal_eval
 
         # Step 6: Save the patches to disk in their respective temporal folders
         print("Saving patches to disk...")
