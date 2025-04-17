@@ -23,6 +23,7 @@ class PreProcessingPipelineTemporal:
 
         #Get values from Config file
         self.sentinel_base_path = config.sentinel_base_path
+        self.sentinel_base_path_eval = config.sentinel_base_path_eval
         self.save_dir = config.save_directory_temporal
         self.load_train_dir = config.load_directory_temporal_train
         self.load_eval_dir = config.load_directory_temporal_eval
@@ -31,14 +32,17 @@ class PreProcessingPipelineTemporal:
         self.date_ranges = config.temporal_points
 
 
-    def run_temporal_patch_save_pipeline(self):
+    def run_temporal_patch_save_pipeline(self,type='train'):
         """
         Function to run the patch-save preprocessing pipeline for temporal image stacks.
         It loads images, integrates masks, applies masking, extracts patches, and saves them.
         """
 
         # Step 1: Load Sentinel Images and Corresponding Masks
-        images = load_sentinel_images_temporal(self.sentinel_base_path)
+        if type == 'train':
+            images = load_sentinel_images_temporal(self.sentinel_base_path)
+        elif type == 'eval':
+            images = load_sentinel_images_temporal(self.sentinel_base_path_eval)
         print(f"Loaded {len(images)} temporal images and with attached masks in them.")
 
         # Step 2: Mask images
@@ -49,11 +53,14 @@ class PreProcessingPipelineTemporal:
         fields = extract_fields_temporal(masked_images, self.field_size)
         print(f"Extracted {len(fields)} patches from temporal images.")
 
-        # Setp 4: Refine the temporal stack: 7 cloud-free images per patch
+        # Setp 4: Refine the temporal stack: 7 cloud-free images per patch with atleast 5-day gap between each successive temporal images
         refined_fields = refine_temporal_stack_interval5(fields, self.temporal_stack_size, self.date_ranges)
 
         # Step 5: Define the base directory to save patches
-        fields_base_directory = config.save_directory_temporal
+        if type == 'train':
+            fields_base_directory = config.save_directory_temporal_train
+        elif type == 'eval':
+            fields_base_directory = config.save_directory_temporal_eval
 
         # Step 6: Save the patches to disk in their respective temporal folders
         print("Saving patches to disk...")
@@ -80,10 +87,15 @@ class PreProcessingPipelineTemporal:
         # Step 1: Load the saved patches from the file system
         if dataset_type == 'train':
             temporal_images = load_field_images_temporal(self.load_train_dir)
+
+            # Filter non-sugarbeet fields for train data
+            temporal_images = filter_non_sugarbeet_fields(temporal_images, config.sugarbeet_content_csv_path)
+
         elif dataset_type == 'eval':
             temporal_images = load_field_images_temporal(self.load_eval_dir)
         else:
             raise ValueError("dataset_type must be either 'train' or 'test'")
+        
 
         # Step 2: Remove the border pixels of the sugarbeet fields
         border_removed_images = blacken_field_borders_temporal(temporal_images)
@@ -97,9 +109,9 @@ class PreProcessingPipelineTemporal:
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
-            'b10t': b10_temporal_cubes_with_temp_encoding,
-            'b4t': b4_temporal_cubes_with_temp_encoding,
-            'b10+t': b10_temporal_cubes_with_temp_encoding_added_to_bands
+            'b10_channel': b10_temporal_cubes_with_temp_encoding,
+            'b4_channel': b4_temporal_cubes_with_temp_encoding,
+            'b10_add': b10_temporal_cubes_with_temp_encoding_added_to_bands
         }
 
         if bands not in band_selection_methods:
@@ -107,8 +119,10 @@ class PreProcessingPipelineTemporal:
 
         if bands in ['indexbands', 'indexonly', 'vid']:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, vi_type)
-        elif bands in ['b10t','b4t']:
+        elif bands in ['b10_channel','b4_channel']:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, method)
+        elif bands in ['b10_add']:
+            field_numbers, acquisition_dates, date_emb, indices_images = band_selection_methods[bands](normalized_images, method)
         else:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
 
@@ -117,6 +131,9 @@ class PreProcessingPipelineTemporal:
         image_tensor = np.stack(indices_images)
         if bands != 'vid':
             image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3) # N, T, C, H, W
+        
+        if bands in ['b10_add']:
+            return field_numbers, acquisition_dates, date_emb, image_tensor, images_visualisation
         
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
@@ -136,6 +153,10 @@ class PreProcessingPipelineTemporal:
         # Step 1: Load the saved patches from the file system
         if dataset_type == 'train':
             temporal_images = load_field_images_temporal(self.load_train_dir)
+
+            # Filter non-sugarbeet fields for train data
+            temporal_images = filter_non_sugarbeet_fields(temporal_images, config.sugarbeet_content_csv_path)
+
         elif dataset_type == 'eval':
             temporal_images = load_field_images_temporal(self.load_eval_dir)
         else:
@@ -152,7 +173,10 @@ class PreProcessingPipelineTemporal:
             'rgb': rgb_temporal_cubes,
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
-            'b10': b10_temporal_cubes
+            'b10': b10_temporal_cubes,
+            'b10_channel': b10_temporal_cubes_with_temp_encoding,
+            'b4_channel': b4_temporal_cubes_with_temp_encoding,
+            'b10_add': b10_temporal_cubes_with_temp_encoding_added_to_bands
         }
 
         if bands not in band_selection_methods:
@@ -189,6 +213,10 @@ class PreProcessingPipelineTemporal:
             # Step 1: Load the saved patches from the file system
             if dataset_type == 'train':
                 temporal_images = load_field_images_temporal(self.load_train_dir)
+
+                # Filter non-sugarbeet fields for train data
+                temporal_images = filter_non_sugarbeet_fields(temporal_images, config.sugarbeet_content_csv_path)
+                
             elif dataset_type == 'eval':
                 temporal_images = load_field_images_temporal(self.load_eval_dir)
             else:

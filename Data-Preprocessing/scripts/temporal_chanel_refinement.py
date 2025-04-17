@@ -169,7 +169,6 @@ def b10_temporal_cubes(temporal_images):
     return field_numbers, acquisition_dates, cubes
 
 
-
 def b10_temporal_cubes_with_temp_encoding(temporal_images, method='single'):
     """ Create temporal cubes with Sentinel bands and a single date embedding channel """
     cubes = []
@@ -295,9 +294,9 @@ def get_single_date_embedding(date_str, ref_date='20190601.0', max_val=106):
     ref = datetime.strptime(ref_date, "%Y%m%d.%f")  # Parse the reference date string
 
     date_diff = (date - ref).days  # Get the difference in days
-    print(date_diff)
+    # print(date_diff)
     embedding = date_diff / max_val
-    print(embedding)
+    # print(embedding)
     return embedding
 
 
@@ -326,11 +325,13 @@ def b10_temporal_cubes_with_temp_encoding_added_to_bands(temporal_images, method
     cubes = []
     field_numbers = []
     acquisition_dates = []
+    all_date_embeddings = []
     field_idx = 0
 
     for temporal_stack in temporal_images:
         temporal_cubes = []
         dates = []
+        date_embeddings = []
 
         # Get field number
         id_mask = temporal_stack[0][..., 11]  # field_id
@@ -356,27 +357,32 @@ def b10_temporal_cubes_with_temp_encoding_added_to_bands(temporal_images, method
             # --- Temporal encoding to be ADDED to existing pixel values ---
             if method == 'single':
                 date_embedding = get_single_date_embedding(date_unique, ref_date='20190601.0')  # scalar
-                encoded = sentinel_bands + date_embedding
+                # encoded = sentinel_bands + date_embedding
+                date_embeddings.append(date_embedding)
+
             elif method == 'sin-cos':
                 sin_emb, cos_emb = get_sin_cos_date_embedding(date_unique)                      # both scalars
-                encoded = sentinel_bands + sin_emb + cos_emb
+                # encoded = sentinel_bands + sin_emb + cos_emb
+                date_embeddings.append([sin_emb,cos_emb])
+
             else:
                 raise ValueError(f"Unknown method '{method}' for temporal encoding.")
 
             # --- Re-normalize back to [0, 1] ---
-            encoded = np.clip(encoded, 0, None)  # avoid negatives before normalization
-            min_val = np.min(encoded)
-            max_val = np.max(encoded)
-            normalized_encoded = (encoded - min_val) / (max_val - min_val + 1e-8)
+            # encoded = np.clip(encoded, 0, None)  # avoid negatives before normalization
+            # min_val = np.min(encoded)
+            # max_val = np.max(encoded)
+            # normalized_encoded = (encoded - min_val) / (max_val - min_val + 1e-8)
 
-            temporal_cubes.append(normalized_encoded)
+            temporal_cubes.append(sentinel_bands)
             dates.append(date_unique)
 
         field_idx += 1
         acquisition_dates.append(dates)
+        all_date_embeddings.append(date_embeddings)
         cubes.append(temporal_cubes)
 
-    return field_numbers, acquisition_dates, cubes
+    return field_numbers, acquisition_dates, all_date_embeddings, cubes
 
 
 
