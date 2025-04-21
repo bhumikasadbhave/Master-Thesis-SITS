@@ -254,6 +254,38 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
         plt.show()
 
 
+#### ----------------------------------- Functions for plotting Losses ------------------------------------ #### 
+
+def plot_all_models_loss_curves(model_names, avg_train_losses, avg_test_losses):
+    """ Plots the train and test loss curves for all models. """
+    epochs = list(range(1, len(avg_train_losses[0]) + 1))
+
+    plt.figure(figsize=(14, 6))
+
+    # Train Loss subplot
+    plt.subplot(1, 2, 1)
+    for model_name, train_loss in zip(model_names, avg_train_losses):
+        plt.plot(epochs, train_loss, label=model_name)
+    plt.title("Train Loss Curves")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
+
+    # Test Loss subplot
+    plt.subplot(1, 2, 2)
+    for model_name, test_loss in zip(model_names, avg_test_losses):
+        plt.plot(epochs, test_loss, label=model_name)
+    plt.title("Test Loss Curves")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 #### ----------------------------------- Functions for plotting MAE reconstructions ------------------------------------ ####
 

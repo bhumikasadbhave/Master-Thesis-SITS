@@ -22,7 +22,7 @@ from skimage import color
 ###### -------------------------- Classical techniques for feature extraction -------------------------- ######
 
 # 1. Channel-wise histogram features
-def extract_channel_histograms(data, bins=256):
+def extract_channel_histograms(data, bins=32):
     """ Returns: numpy array of shape (N, T, C * bins): Flattened histograms per time step and channel"""
 
     N, T, C, H, W = data.shape
@@ -58,49 +58,6 @@ def pca_feature_extraction(data, n_components=3):
 
     return pca, transformed, top_channel_indices
 
-
-# 3. SIFT features --> not used
-def extract_sift_features(data):
-
-    sift = cv2.SIFT_create()
-    sift_features = []
-    for i in range(data.shape[0]):  
-        sample_features = []
-        for t in range(data.shape[1]):  
-            for c in range(data.shape[2]):  
-                img = data[i, t, c]  
-                img = np.uint8(img)     #uint8 for SIFT
-                keypoints, descriptors = sift.detectAndCompute(img, None)
-                if descriptors is not None:
-                    sample_features.append(descriptors)
-        
-        # Flatten the list of features from all channels and time steps
-        sample_features = np.vstack(sample_features) if sample_features else np.array([])
-        sift_features.append(sample_features)
-    return sift_features
-
-
-# 4. HOG features --> not used
-def extract_hog_features(data, pixels_per_cell=(2, 2), cells_per_block=(2, 2), visualize=False):
-
-    hog_features = []
-    # hog_images = []
-    for i in range(data.shape[0]):  
-        sample_features = []
-        for t in range(data.shape[1]):  
-            for c in range(data.shape[2]):  
-                img = data[i, t, c] 
-                img = np.uint8(img)  #uint8 for HOG
-                feature = hog(img, pixels_per_cell=pixels_per_cell, 
-                                         cells_per_block=cells_per_block, 
-                                         visualize=visualize, 
-                                         channel_axis=None)           
-                sample_features.append(feature)
-                # hog_images.append(hog_image)
-        
-        sample_features = np.concatenate(sample_features) if sample_features else np.array([])
-        hog_features.append(sample_features)
-    return hog_features
 
 
 ###### -------------------------- Pre-trained models for feature extraction -------------------------- #######
