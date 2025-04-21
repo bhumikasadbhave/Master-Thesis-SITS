@@ -51,8 +51,8 @@ def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimize
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
         end = time.perf_counter()
-        print(f"Time taken per epoch: {end - start:.4f} seconds")
-        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+        # print(f"Time taken per epoch: {end - start:.4f} seconds")
+        # print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
     return model, epoch_train_losses, epoch_test_losses
 
 
@@ -97,8 +97,8 @@ def train_model_ae_te(model, train_dataloader, test_dataloader, out_channels=10,
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
         end = time.perf_counter()
-        print(f"Time taken per epoch: {end - start:.4f} seconds")
-        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+        # print(f"Time taken per epoch: {end - start:.4f} seconds")
+        # print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
     return model, epoch_train_losses, epoch_test_losses
 
 
@@ -144,8 +144,8 @@ def train_model_ae_te_pixel(model, train_dataloader, test_dataloader, out_channe
                 test_loss += loss.item()
         epoch_test_losses.append(test_loss / len(test_dataloader))
         end = time.perf_counter()
-        print(f"Time taken per epoch: {end - start:.4f} seconds")
-        print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
+        # print(f"Time taken per epoch: {end - start:.4f} seconds")
+        # print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss / len(train_dataloader):.6f}, Test Loss: {test_loss / len(test_dataloader):.6f}")
     return model, epoch_train_losses, epoch_test_losses
 
 
@@ -240,9 +240,9 @@ def train_model_vae(model, train_dataloader, test_dataloader, epochs=10, lr=0.00
         epoch_test_recon_losses.append(test_recon_loss / len(test_dataloader))
         epoch_test_kl_losses.append(test_kl_loss / len(test_dataloader))
         
-        print(f"Epoch {epoch + 1}/{epochs}")
-        print(f"  Train Recon Loss: {train_recon_loss / len(train_dataloader):.4f}, Train KL Loss: {train_kl_loss / len(train_dataloader):.4f}")
-        print(f"  Test Recon Loss: {test_recon_loss / len(test_dataloader):.4f}, Test KL Loss: {test_kl_loss / len(test_dataloader):.4f}")
+        # print(f"Epoch {epoch + 1}/{epochs}")
+        # print(f"  Train Recon Loss: {train_recon_loss / len(train_dataloader):.4f}, Train KL Loss: {train_kl_loss / len(train_dataloader):.4f}")
+        # print(f"  Test Recon Loss: {test_recon_loss / len(test_dataloader):.4f}, Test KL Loss: {test_kl_loss / len(test_dataloader):.4f}")
     return model, epoch_train_recon_losses, epoch_train_kl_losses, epoch_test_recon_losses, epoch_test_kl_losses
 
 

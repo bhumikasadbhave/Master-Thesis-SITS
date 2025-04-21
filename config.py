@@ -73,6 +73,12 @@ regression_linear_hist = '/home/k64835/SITS-models/regression/linear_hist.pkl'
 regression_linear_2dconv = '/home/k64835/SITS-models/regression/linear_2dconv.pkl'
 regression_linear_3dconv = '/home/k64835/SITS-models/regression/linear_3dconv.pkl'
 
+# -- Vegetation Index Experiments -- #
+ae_3d_mvi_path = '/home/k64835/SITS-models/vi/ae_mvi.pkl'
+kmeans_ae_3D_mvi_path = '/home/k64835/SITS-models/vi/kmeans_ae_mvi.pkl'
+ae_3d_b4_path = '/home/k64835/SITS-models/vi/ae_b4.pkl'
+kmeans_ae_3D_b4_path = '/home/k64835/SITS-models/vi/kmeans_ae_b4.pkl'
+
 
 mae_save_dir = '/home/k64835/'
 

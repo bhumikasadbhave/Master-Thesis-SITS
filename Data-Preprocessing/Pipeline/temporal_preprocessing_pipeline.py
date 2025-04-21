@@ -111,8 +111,9 @@ class PreProcessingPipelineTemporal:
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
             'b10_channel': b10_temporal_cubes_with_temp_encoding,       # temporal encodings as 2 extra channels
-            'b4_channel': b4_temporal_cubes_with_temp_encoding,         # temporal encodings as 2 extra channels
-            'b10_add': b10_temporal_cubes_with_temp_encoding_returned   # temporal encodings returned for addition in autoencoder
+            'b10_add': b10_temporal_cubes_with_temp_encoding_returned,   # temporal encodings returned for addition in autoencoder
+            'b4_add': b4_temporal_cubes_with_temp_encoding_returned,   # temporal encodings returned for addition in autoencoder
+            'mvi_add': mvi_temporal_cubes_with_temp_encoding_returned   # temporal encodings returned for addition in autoencoder
         }
 
         if bands not in band_selection_methods:
@@ -122,7 +123,7 @@ class PreProcessingPipelineTemporal:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, vi_type)
         elif bands in ['b10_channel','b4_channel']:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, method)
-        elif bands in ['b10_add']:
+        elif bands in ['b10_add', 'b4_add', 'mvi_add']:
             field_numbers, acquisition_dates, date_emb, indices_images = band_selection_methods[bands](normalized_images, method)
         else:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
@@ -133,7 +134,7 @@ class PreProcessingPipelineTemporal:
         if bands != 'vid':
             image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3) # N, T, C, H, W
         
-        if bands in ['b10_add']:
+        if bands in ['b10_add', 'b4_add', 'mvi_add']:
             return field_numbers, acquisition_dates, date_emb, image_tensor, images_visualisation
         
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
