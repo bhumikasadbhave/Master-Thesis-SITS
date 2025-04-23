@@ -8,15 +8,17 @@ import pickle
 import copy
 
 
-def create_model(model_class, channels=10, out_channels=10, timestamps=7, latent=32, subpatch_size=4, time_emb_channel= False):
+def create_model(model_class, channels=10, out_channels=10, timestamps=7, latent=32, subpatch_size=4, non_temp=False, time_emb_channel= False):
     if time_emb_channel == True:
         return model_class(12, out_channels, timestamps,latent,subpatch_size)
+    if non_temp == True:
+        return model_class(channels,latent,subpatch_size)
     return model_class(channels, timestamps,latent,subpatch_size)
 
 
 def train_model_multiple_runs_with_metrics(
-    model_name, model_class, dataloader_train, dataloader_test, dataloader_eval,
-    epochs, optimizer, lr, vae_lr, vae_optimizer, momentum, device, config, output_dir="results"
+    model_name, model_class, dataloader_train, dataloader_test, dataloader_eval, channels, timestamps,
+    epochs, optimizer, lr, vae_lr, vae_optimizer, momentum, device, config, output_dir="results", non_temp=False
 ):
     """Run 3 executions of training-evaluation for every model"""
 
@@ -36,12 +38,12 @@ def train_model_multiple_runs_with_metrics(
     for run in range(3):
         # model = copy.deepcopy(model_obj)           # fresh copy
         if model_name in ['3D_AE_temporal_channel']:
-            model = create_model(model_class, time_emb_channel=True) 
+            model = create_model(model_class, channels=channels, timestamps=timestamps, time_emb_channel=True) 
         else:
-            model = create_model(model_class, time_emb_channel=False) 
+            model = create_model(model_class, channels=channels, timestamps=timestamps, non_temp=non_temp, time_emb_channel=False) 
         model = model.to(device)
 
-        if model_name in ['2D_AE','3D_AE']:
+        if model_name in ['2D_AE','3D_AE','2D_AE_NonTemporal']:
             trained_model, train_losses, test_losses = train_model_ae(
                 model, dataloader_train, dataloader_test,
                 epochs=epochs, optimizer=optimizer, lr=lr,
@@ -53,7 +55,7 @@ def train_model_multiple_runs_with_metrics(
                 epochs=epochs, optimizer=optimizer, lr=lr,
                 momentum=momentum, device=device
             )
-        if model_name in ['3D_AE_temporal_addition']:
+        if model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4']:
             trained_model, train_losses, test_losses = train_model_ae_te_pixel(
                 model, dataloader_train, dataloader_test,
                 epochs=epochs, optimizer=optimizer, lr=lr,
@@ -75,7 +77,7 @@ def train_model_multiple_runs_with_metrics(
             train_features, train_coord_dl = extract_features_vae(trained_model, dataloader_train, device=device)
             test_features, test_coord_dl = extract_features_vae(trained_model, dataloader_test, device=device)
             eval_features, eval_coord_dl = extract_features_vae(trained_model, dataloader_eval, device=device)
-        elif model_name in ['3D_AE_temporal_addition']:
+        elif model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4']:
             train_features, train_coord_dl = extract_features_ae(trained_model, dataloader_train, temp_embed_pixel=True, device=device)
             test_features, test_coord_dl = extract_features_ae(trained_model, dataloader_test, temp_embed_pixel=True, device=device)
             eval_features, eval_coord_dl = extract_features_ae(trained_model, dataloader_eval, temp_embed_pixel=True, device=device)
