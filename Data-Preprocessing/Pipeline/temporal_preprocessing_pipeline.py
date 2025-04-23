@@ -136,11 +136,10 @@ class PreProcessingPipelineTemporal:
         
         if bands in ['b10_add', 'b4_add', 'mvi_add']:
             return field_numbers, acquisition_dates, date_emb, image_tensor, images_visualisation
-        
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
 
-    def get_processed_non_temporal_data(self, dataset_type, bands, vi_type='msi'):
+    def get_processed_non_temporal_data(self, dataset_type, bands, vi_type='msi', method='single'):
         """ 
         Pipeline to load the saved field patches, remove border pixels, 
         and extract the last image from the temporal stack as non-temporal data.
@@ -176,27 +175,34 @@ class PreProcessingPipelineTemporal:
             'mvi': mvi_temporal_cubes,
             'b4': b4_temporal_cubes,
             'b10': b10_temporal_cubes,
-            'b10_channel': b10_temporal_cubes_with_temp_encoding,
-            'b4_channel': b4_temporal_cubes_with_temp_encoding,
-            'b10_add': b10_temporal_cubes_with_temp_encoding_returned
+            'b10_channel': b10_temporal_cubes_with_temp_encoding,       # temporal encodings as 2 extra channels
+            'b10_add': b10_temporal_cubes_with_temp_encoding_returned,   # temporal encodings returned for addition in autoencoder
+            'b4_add': b4_temporal_cubes_with_temp_encoding_returned,   # temporal encodings returned for addition in autoencoder
+            'mvi_add': mvi_temporal_cubes_with_temp_encoding_returned   # temporal encodings returned for addition in autoencoder
         }
 
         if bands not in band_selection_methods:
             raise ValueError(f"Invalid bands option: {bands}")
 
-        if bands in ['indexbands', 'indexonly']:
-            field_numbers, acquisition_dates, processed_images = band_selection_methods[bands](normalized_images, vi_type)
+        if bands in ['indexbands', 'indexonly', 'vid']:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, vi_type)
+        elif bands in ['b10_channel','b4_channel']:
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images, method)
+        elif bands in ['b10_add', 'b4_add', 'mvi_add']:
+            field_numbers, acquisition_dates, date_emb, indices_images = band_selection_methods[bands](normalized_images, method)
         else:
-            field_numbers, acquisition_dates, processed_images = band_selection_methods[bands](normalized_images)
+            field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
 
         # Step 5: Extract the last image from each temporal stack
-        non_temporal_images = [stack[-1] for stack in processed_images]  #Selecting the last image (September image)
+        non_temporal_images = [stack[-1] for stack in indices_images]  #Selecting the last image (September image)
 
         # Step 6: Convert to tensor format for modelling, and return list of images for Visualisation
         images_visualisation = non_temporal_images
         image_tensor = np.stack(non_temporal_images)
         image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 3, 1, 2)  # No temporal dimension
 
+        if bands in ['b10_add', 'b4_add', 'mvi_add']:
+            return field_numbers, acquisition_dates, date_emb, image_tensor, images_visualisation
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
 

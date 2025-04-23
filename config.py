@@ -80,6 +80,10 @@ ae_3d_b4_path = '/home/k64835/SITS-models/vi/ae_b4.pkl'
 kmeans_ae_3D_b4_path = '/home/k64835/SITS-models/vi/kmeans_ae_b4.pkl'
 
 
+# -- Result JSONs for all AE-based models and experiments -- ##
+results_json_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results'
+
+
 mae_save_dir = '/home/k64835/'
 
 #### Data Parameters ####
