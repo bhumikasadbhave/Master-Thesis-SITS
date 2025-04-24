@@ -127,8 +127,8 @@ class PreProcessingPipelineTemporal:
         else:
             field_numbers, acquisition_dates, indices_images = band_selection_methods[bands](normalized_images)
 
-        # Return Temporal Cubes for training, and list of images for visualisation
-        images_visualisation = indices_images
+        # Step 5: Return Temporal Cubes for training, and list of images for visualisation
+        images_visualisation = normalized_images
         image_tensor = np.stack(indices_images)
         if bands != 'vid':
             image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3) # N, T, C, H, W
@@ -266,3 +266,6 @@ class PreProcessingPipelineTemporal:
             image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 1, 4, 2, 3)
             
             return field_numbers, acquisition_dates, image_tensor, images_visualisation
+
+
+
