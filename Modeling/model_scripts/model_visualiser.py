@@ -254,6 +254,97 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
         plt.show()
 
 
+def plot_temporal_grid_reconstructions(model, dataloader, old_images, device='cuda', model_type='ae', num_fields=7):
+    """Grids of original and reconstructions for final model (for Manuscript)"""
+
+    model.eval()
+    recon_dict = {}
+
+    # Step 1: Collect reconstructions
+    for idx in range(len(dataloader.dataset)):
+        if model_type in ['ae', 'vae']:
+            inputs, patch_id_xy = dataloader.dataset[idx]
+            inputs = inputs.unsqueeze(0).to(device)
+            with torch.no_grad():
+                if model_type == 'ae':
+                    _, outputs = model(inputs)
+                elif model_type == 'vae':
+                    _, _, _, outputs = model(inputs)
+        elif model_type == 'ae_te':
+            inputs, patch_id_xy, date_emb = dataloader.dataset[idx]
+            inputs = inputs.unsqueeze(0).to(device)
+            date_emb = torch.tensor(date_emb).unsqueeze(0).to(device)
+            with torch.no_grad():
+                _, outputs = model(inputs, date_emb)
+        else:
+            raise ValueError(f"Unsupported model type: {model_type}")
+
+        outputs = outputs.cpu().squeeze(0)  # [C, T, 4, 4]
+        id_coords = patch_id_xy.split('_')
+        x, y = int(id_coords[-2]), int(id_coords[-1])
+        field_number = '_'.join(id_coords[:-2])
+
+        if field_number not in recon_dict:
+            recon_dict[field_number] = []
+        recon_dict[field_number].append((x, y, outputs[:3]))
+
+    # Step 2: Select random fields
+    chosen_fields = random.sample(list(recon_dict.keys()), num_fields)
+
+    originals_all = []
+    reconstructions_all = []
+
+    # Step 3: Gather temporal sequences
+    for field_number in chosen_fields:
+        patch_list = recon_dict[field_number]
+        original_temporal = old_images[field_number]  # [7, 64, 64, 12]
+        mask = original_temporal[0][:, :, 0] != 0
+        recon_image = np.zeros((64, 64, 3, 7))
+
+        for (x, y, patch_recon) in patch_list:
+            for t in range(7):
+                patch_np = patch_recon[:, t].permute(1, 2, 0).numpy()
+                recon_image[y:y+4, x:x+4, :, t] = patch_np
+
+        for t in range(7):
+            for c in range(3):
+                recon_image[:, :, c, t] *= mask
+
+        originals_all.append([normalize_for_display(original_temporal[t][:, :, :3]) for t in range(7)])
+        reconstructions_all.append([normalize_for_display(recon_image[:, :, :, t]) for t in range(7)])
+
+    # Step 4: Plot Originals Grid (Fields as rows, Time steps as columns)
+    fig, axs = plt.subplots(num_fields, 7, figsize=(3 * 7, 3 * num_fields))
+    fig.suptitle("Originals", fontsize=18)
+    for row in range(num_fields):  # row = field
+        for col in range(7):       # col = time step
+            axs[row, col].imshow(originals_all[row][col])
+            axs[row, col].axis('off')
+            if row == 0:
+                axs[row, col].set_title(f'Time Step {col+1}')
+            if col == 0:
+                axs[row, col].set_ylabel(f'Field {row+1}', fontsize=12)
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.93)
+    plt.show()
+
+    # Step 5: Plot Reconstructions Grid (Fields as rows, Time steps as columns)
+    fig, axs = plt.subplots(num_fields, 7, figsize=(3 * 7, 3 * num_fields))
+    fig.suptitle("Reconstructions", fontsize=18)
+    for row in range(num_fields):
+        for col in range(7):
+            axs[row, col].imshow(reconstructions_all[row][col])
+            axs[row, col].axis('off')
+            if row == 0:
+                axs[row, col].set_title(f'Time Step {col+1}')
+            if col == 0:
+                axs[row, col].set_ylabel(f'Field {row+1}', fontsize=12)
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.93)
+    plt.show()
+
+
+
 #### ----------------------------------- Functions for plotting Losses ------------------------------------ #### 
 
 def plot_all_models_loss_curves(model_names, avg_train_losses, avg_test_losses):
