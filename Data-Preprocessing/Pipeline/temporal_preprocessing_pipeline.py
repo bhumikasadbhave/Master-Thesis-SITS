@@ -211,14 +211,10 @@ class PreProcessingPipelineTemporal:
 
     def get_processed_temporal_cube3(self, dataset_type, bands, vi_type='msi'):
             """ 
+            Function for MAE, with Temporal stack size = 3 
             Pipeline to load the saved field patches, remove border pixels, 
             and extract the last image from the temporal stack as non-temporal data.
             Returns image tensor and field numbers.
-            
-            Parameters:
-                dataset_type (str): 'train' or 'eval' to specify dataset.
-                bands (str): Type of band selection method.
-                vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
             """
 
             # Step 1: Load the saved patches from the file system
