@@ -1,3 +1,6 @@
+### This files contains the pre-processing pipeline. 
+### The steps are numbered according to the Thesis Manuscript and Data Pre-processing pipeline flow chart.
+
 import config as config
 from scripts.temporal_data_loader import *
 from scripts.temporal_data_preprocessor import *
@@ -39,14 +42,14 @@ class PreProcessingPipelineTemporal:
         It loads images, integrates masks, applies masking, extracts patches, and saves them.
         """
 
-        # Step 1: Load Sentinel Images and Corresponding Masks
+        # Step 1: Load Sentinel Images and Mask Integration
         if type == 'train':
             images = load_sentinel_images_temporal(self.sentinel_base_path)
         elif type == 'eval':
             images = load_sentinel_images_temporal(self.sentinel_base_path_eval)
         print(f"Loaded {len(images)} temporal images and with attached masks in them.")
 
-        # Step 2: Mask images
+        # Step 2: Mask image pixels
         masked_images = mask_images_temporal(images)
         print(f"Masked {len(masked_images)} images.")
 
@@ -57,13 +60,13 @@ class PreProcessingPipelineTemporal:
         # Setp 4: Refine the temporal stack: 7 cloud-free images per patch with atleast 5-day gap between each successive temporal images
         refined_fields = refine_temporal_stack_interval5(fields, self.temporal_stack_size, self.date_ranges)
 
-        # Step 5: Define the base directory to save patches
+        # Define the base directory to save patches
         if type == 'train':
             fields_base_directory = self.save_directory_temporal_train
         elif type == 'eval':
             fields_base_directory = self.save_directory_temporal_eval
 
-        # Step 6: Save the patches to disk in their respective temporal folders
+        # Save the patches to disk in their respective temporal folders
         print("Saving patches to disk...")
         success = save_field_images_temporal(fields_base_directory, refined_fields)
         if success:
@@ -85,7 +88,7 @@ class PreProcessingPipelineTemporal:
             vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
         """
 
-        # Step 1: Load the saved patches from the file system
+        # Load the saved patches from the file system
         if dataset_type == 'train':
             temporal_images = load_field_images_temporal(self.load_train_dir)
 
@@ -98,13 +101,13 @@ class PreProcessingPipelineTemporal:
             raise ValueError("dataset_type must be either 'train' or 'test'")
         
 
-        # Step 2: Remove the border pixels of the sugarbeet fields
+        # Step 4: Remove the border pixels of the sugarbeet fields
         border_removed_images = blacken_field_borders_temporal(temporal_images)
 
-        # Step 3: Remove the border pixels of the sugarbeet fields
+        # Step 4: Channel-wise Normalisation
         normalized_images = normalize_images(border_removed_images)
 
-        # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
+        # Step 5: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
             'rgb': rgb_temporal_cubes,
             'mvi': mvi_temporal_cubes,
