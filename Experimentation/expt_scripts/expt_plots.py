@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import json
-import matplotlib.pyplot as plt
-import numpy as np
 import os
+from math import pi
+import pandas as pd
 
 def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold vs Recall'):
     """ Plots recall against thresholds. """
@@ -87,7 +87,7 @@ def plot_losses_ae(train_loss, test_loss):
         avg_loss = np.mean(losses)
         plt.plot(range(1, len(losses) + 1), losses, label=f'{model_name} Train Loss')
     plt.title('Train Losses')
-    plt.xlabel('Run')
+    plt.xlabel('Epochs')
     plt.ylabel('Loss')
     # plt.yscale("log")
     plt.legend()
@@ -100,13 +100,45 @@ def plot_losses_ae(train_loss, test_loss):
         avg_loss = np.mean(losses)
         plt.plot(range(1, len(losses) + 1), losses, label=f'{model_name} Test Loss')
     plt.title('Test Losses')
-    plt.xlabel('Run')
+    plt.xlabel('Epochs')
     plt.ylabel('Loss')
     # plt.yscale("log")
     plt.legend()
     plt.tight_layout()
     plt.show()
 
+
+def plot_pretty_radar(metrics, save_path="pretty_radar_plot.png"):
+
+    df = pd.DataFrame(metrics).T / 100
+    labels = df.columns.tolist()
+    num_vars = len(labels)
+    angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
+    angles += angles[:1]
+
+    plt.style.use("seaborn-v0_8-muted")
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
+
+    colors = plt.cm.viridis(np.linspace(0, 1, len(df)))
+    for i, (model, row) in enumerate(df.iterrows()):
+        values = row.tolist() + row.tolist()[:1]
+        ax.plot(angles, values, label=model, linewidth=2.5, color=colors[i])
+        ax.fill(angles, values, color=colors[i], alpha=0.25)
+
+    ax.set_theta_offset(pi / 2)
+    ax.set_theta_direction(-1)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=12)
+
+    ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'], fontsize=10, color="gray")
+    ax.yaxis.grid(True, linestyle="--", linewidth=0.7)
+    ax.xaxis.grid(True, linestyle="--", linewidth=0.7)
+
+    plt.title("Radar Plot of Model Metrics", size=14, pad=20)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=10)
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_losses_from_json(json_path, title="Train vs Test Loss"):
