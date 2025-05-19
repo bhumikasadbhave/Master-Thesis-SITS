@@ -5,6 +5,9 @@ import json
 import os
 from math import pi
 import pandas as pd
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.colors as mcolors
+import math
 
 def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold vs Recall'):
     """ Plots recall against thresholds. """
@@ -107,7 +110,37 @@ def plot_losses_ae(train_loss, test_loss):
     plt.tight_layout()
     plt.show()
 
+def plot_losses_from_json(json_path, title="Train vs Test Loss"):
+    """ Given a JSON file path, this function reads the train and test losses and plots them together in a single plot.
+    """
+    with open(json_path, 'r') as f:
+        data = json.load(f)
 
+    # Try keys depending on whether it's a run file or avg file
+    train_losses = data.get("train_losses", data.get("avg_train_loss"))
+    test_losses = data.get("test_losses", data.get("avg_test_loss"))
+
+    if train_losses is None or test_losses is None:
+        print(f"Missing losses in: {json_path}")
+        return
+
+    model_name = os.path.basename(json_path).replace(".json", "")
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(range(1, len(train_losses)+1), train_losses, label="Train Loss")
+    plt.plot(range(1, len(test_losses)+1), test_losses, label="Test Loss", linestyle='-')
+    plt.title(title)
+    plt.xlabel("Epoch" if "avg" in json_path else "Run")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+    return train_losses, test_losses
+
+
+# code: 19 may 2025
 def plot_pretty_radar(metrics, save_path="pretty_radar_plot.png"):
 
     df = pd.DataFrame(metrics).T / 100
@@ -141,35 +174,84 @@ def plot_pretty_radar(metrics, save_path="pretty_radar_plot.png"):
     plt.show()
 
 
-def plot_losses_from_json(json_path, title="Train vs Test Loss"):
-    """ Given a JSON file path, this function reads the train and test losses and plots them together in a single plot.
-    """
+def plot_confusion_matrices(json_path):
     with open(json_path, 'r') as f:
         data = json.load(f)
-
-    # Try keys depending on whether it's a run file or avg file
-    train_losses = data.get("train_losses", data.get("avg_train_loss"))
-    test_losses = data.get("test_losses", data.get("avg_test_loss"))
-
-    if train_losses is None or test_losses is None:
-        print(f"Missing losses in: {json_path}")
-        return
-
-    model_name = os.path.basename(json_path).replace(".json", "")
-
-    plt.figure(figsize=(8, 6))
-    plt.plot(range(1, len(train_losses)+1), train_losses, label="Train Loss")
-    plt.plot(range(1, len(test_losses)+1), test_losses, label="Test Loss", linestyle='-')
-    plt.title(title)
-    plt.xlabel("Epoch" if "avg" in json_path else "Run")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.4)
+    
+    num_models = len(data)
+    cols = math.ceil(math.sqrt(num_models))
+    rows = math.ceil(num_models / cols)
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(5*cols, 4*rows))
+    if num_models == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+    
+    for i, (model_name, preds) in enumerate(data.items()):
+        y_true = preds['y_true']
+        y_pred = preds['y_pred']
+        cm = confusion_matrix(y_true, y_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot(ax=axes[i], colorbar=False)
+        axes[i].set_title(model_name)
+    for j in range(i+1, len(axes)):
+        fig.delaxes(axes[j])
     plt.tight_layout()
     plt.show()
 
-    return train_losses, test_losses
 
+
+def plot_confusion_matrices_no_borders(json_path):
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    num_models = len(data)
+    cols = math.ceil(math.sqrt(num_models))
+    rows = math.ceil(num_models / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(4*cols, 3.5*rows))
+    if num_models == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+
+    cell_colors = {
+        (0, 0): '#A8D5BA',  # TN - pastel green
+        (0, 1): '#F7B7A3',  # FP - pastel coral
+        (1, 0): '#FFD97D',  # FN - pastel yellow
+        (1, 1): '#90B3D4',  # TP - pastel blue
+    }
+
+    for i, (model_name, preds) in enumerate(data.items()):
+        y_true = preds['y_true']
+        y_pred = preds['y_pred']
+        cm = confusion_matrix(y_true, y_pred)
+
+        ax = axes[i]
+        for (row, col), color in cell_colors.items():
+            ax.fill_between([col, col+1], row, row+1, color=color, edgecolor=None)
+
+            count = cm[row, col]
+            ax.text(col + 0.5, row + 0.5, str(count), ha='center', va='center',
+                    fontsize=14, fontweight='bold', color='black')
+
+        ax.set_title(model_name, fontsize=12, pad=10)
+        ax.set_xticks(np.arange(2) + 0.5)
+        ax.set_yticks(np.arange(2) + 0.5)
+        ax.set_xticklabels(['Pred 0', 'Pred 1'], fontsize=10)
+        ax.set_yticklabels(['True 0', 'True 1'], fontsize=10)
+        ax.invert_yaxis()
+        ax.set_xlim(0, 2)
+        ax.set_ylim(0, 2)
+        ax.grid(False)
+        ax.tick_params(length=0)
+
+    for j in range(i+1, len(axes)):
+        fig.delaxes(axes[j])
+
+    plt.tight_layout()
+    plt.show()
 
 
 
