@@ -49,6 +49,7 @@ class PreProcessingPipelineTemporal:
             images = load_sentinel_images_temporal(self.sentinel_base_path_eval)
         print(f"Loaded {len(images)} temporal images and with attached masks in them.")
 
+
         # Step 2: Mask images using Sugarbeet Field ID mask
         masked_images = mask_images_temporal(images)
         print(f"Masked {len(masked_images)} images.")
@@ -107,7 +108,6 @@ class PreProcessingPipelineTemporal:
         # Step 4: Channel-wise Normalisation
         normalized_images = normalize_images(border_removed_images)
 
-        # Step 5: Select relevant Vegetation Indices and Sentinel-2 Bands
         # Step 5: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
             'rgb': rgb_temporal_cubes,
