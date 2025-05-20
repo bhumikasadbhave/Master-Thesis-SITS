@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import os
+import json
 import matplotlib.pyplot as plt
 from sklearn.metrics import fbeta_score, recall_score, f1_score, precision_score
 import matplotlib.patches as patches
@@ -24,7 +26,7 @@ def get_string_fielddata(patch_coordinates):
 
 ###  Functions for assigning patch-level labels from sub-patch level labels ---------------------------------------------------
 
-def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, ground_truth_csv_path, threshold=0.5):
+def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, ground_truth_csv_path, threshold=0.5, model_name='Flattened Data', save_pred=False):
     """
     Evaluate clustering accuracy (ACC), precision, recall, and F1-score per class.
     Compares both assumptions (1=disease and 0=disease) and selects the best cluster mapping.
@@ -68,6 +70,18 @@ def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, grou
     y_pred = np.array(y_pred)
     y_true = np.array(y_true)
 
+    #Save y_pred and y_true
+    if save_pred==True:
+        file_path = config.predictions_path
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+        else:
+            data = {}
+        data[model_name] = {'y_true': y_true.tolist(), 'y_pred': y_pred.tolist()}
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        
     acc_1 = np.mean(y_pred == y_true)
     recall_1 = recall_score(y_true, y_pred)
     precision_1 = precision_score(y_true, y_pred)

@@ -49,7 +49,8 @@ class PreProcessingPipelineTemporal:
             images = load_sentinel_images_temporal(self.sentinel_base_path_eval)
         print(f"Loaded {len(images)} temporal images and with attached masks in them.")
 
-        # Step 2: Mask image pixels
+
+        # Step 2: Mask images using Sugarbeet Field ID mask
         masked_images = mask_images_temporal(images)
         print(f"Masked {len(masked_images)} images.")
 
@@ -154,7 +155,7 @@ class PreProcessingPipelineTemporal:
             vi_type (str, optional): Type of vegetation index in case 'indexbands' OR 'indexonly' is used, default is 'msi'.
         """
 
-        # Step 1: Load the saved patches from the file system
+        # Load the saved patches from the file system
         if dataset_type == 'train':
             temporal_images = load_field_images_temporal(self.load_train_dir)
 
@@ -166,13 +167,13 @@ class PreProcessingPipelineTemporal:
         else:
             raise ValueError("dataset_type must be either 'train' or 'eval'")
 
-        # Step 2: Remove border pixels
+        # Step 4: Remove border pixels
         border_removed_images = blacken_field_borders_temporal(temporal_images)
 
-        # Step 3: Remove the border pixels of the sugarbeet fields
+        # Normalize
         normalized_images = normalize_images(border_removed_images)
 
-        # Step 4: Select relevant Vegetation Indices and Sentinel-2 Bands
+        # Step 5: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {
             'rgb': rgb_temporal_cubes,
             'mvi': mvi_temporal_cubes,
@@ -199,7 +200,7 @@ class PreProcessingPipelineTemporal:
         # Step 5: Extract the last image from each temporal stack
         non_temporal_images = [stack[-1] for stack in indices_images]  #Selecting the last image (September image)
 
-        # Step 6: Convert to tensor format for modelling, and return list of images for Visualisation
+        # Convert to tensor format for modelling, and return list of images for Visualisation
         images_visualisation = non_temporal_images
         image_tensor = np.stack(non_temporal_images)
         image_tensor = torch.tensor(image_tensor, dtype=torch.float32).permute(0, 3, 1, 2)  # No temporal dimension
@@ -208,7 +209,7 @@ class PreProcessingPipelineTemporal:
             return field_numbers, acquisition_dates, date_emb, image_tensor, images_visualisation
         return field_numbers, acquisition_dates, image_tensor, images_visualisation
 
-
+    # For masked autoencoder
     def get_processed_temporal_cube3(self, dataset_type, bands, vi_type='msi'):
             """ 
             Function for MAE, with Temporal stack size = 3 
