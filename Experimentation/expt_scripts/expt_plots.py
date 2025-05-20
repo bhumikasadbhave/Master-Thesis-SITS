@@ -2,9 +2,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import json
-import matplotlib.pyplot as plt
-import numpy as np
 import os
+from math import pi
+import pandas as pd
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.colors as mcolors
+import math
 
 def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold vs Recall'):
     """ Plots recall against thresholds. """
@@ -87,7 +90,7 @@ def plot_losses_ae(train_loss, test_loss):
         avg_loss = np.mean(losses)
         plt.plot(range(1, len(losses) + 1), losses, label=f'{model_name} Train Loss')
     plt.title('Train Losses')
-    plt.xlabel('Run')
+    plt.xlabel('Epochs')
     plt.ylabel('Loss')
     # plt.yscale("log")
     plt.legend()
@@ -100,14 +103,12 @@ def plot_losses_ae(train_loss, test_loss):
         avg_loss = np.mean(losses)
         plt.plot(range(1, len(losses) + 1), losses, label=f'{model_name} Test Loss')
     plt.title('Test Losses')
-    plt.xlabel('Run')
+    plt.xlabel('Epochs')
     plt.ylabel('Loss')
     # plt.yscale("log")
     plt.legend()
     plt.tight_layout()
     plt.show()
-
-
 
 def plot_losses_from_json(json_path, title="Train vs Test Loss"):
     """ Given a JSON file path, this function reads the train and test losses and plots them together in a single plot.
@@ -138,6 +139,119 @@ def plot_losses_from_json(json_path, title="Train vs Test Loss"):
 
     return train_losses, test_losses
 
+
+# code: 19 may 2025
+def plot_pretty_radar(metrics, save_path="pretty_radar_plot.png"):
+
+    df = pd.DataFrame(metrics).T / 100
+    labels = df.columns.tolist()
+    num_vars = len(labels)
+    angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
+    angles += angles[:1]
+
+    plt.style.use("seaborn-v0_8-muted")
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
+
+    colors = plt.cm.viridis(np.linspace(0, 1, len(df)))
+    for i, (model, row) in enumerate(df.iterrows()):
+        values = row.tolist() + row.tolist()[:1]
+        ax.plot(angles, values, label=model, linewidth=2.5, color=colors[i])
+        ax.fill(angles, values, color=colors[i], alpha=0.25)
+
+    ax.set_theta_offset(pi / 2)
+    ax.set_theta_direction(-1)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=12)
+
+    ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'], fontsize=10, color="gray")
+    ax.yaxis.grid(True, linestyle="--", linewidth=0.7)
+    ax.xaxis.grid(True, linestyle="--", linewidth=0.7)
+
+    plt.title("Radar Plot of Model Metrics", size=14, pad=20)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=10)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_confusion_matrices(json_path):
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    
+    num_models = len(data)
+    cols = math.ceil(math.sqrt(num_models))
+    rows = math.ceil(num_models / cols)
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(5*cols, 4*rows))
+    if num_models == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+    
+    for i, (model_name, preds) in enumerate(data.items()):
+        y_true = preds['y_true']
+        y_pred = preds['y_pred']
+        cm = confusion_matrix(y_true, y_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot(ax=axes[i], colorbar=False)
+        axes[i].set_title(model_name)
+    for j in range(i+1, len(axes)):
+        fig.delaxes(axes[j])
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_confusion_matrices_no_borders(json_path):
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    num_models = len(data)
+    cols = math.ceil(math.sqrt(num_models))
+    rows = math.ceil(num_models / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(4*cols, 3.5*rows))
+    if num_models == 1:
+        axes = [axes]
+    else:
+        axes = axes.flatten()
+
+    cell_colors = {
+        (0, 0): '#A8D5BA',  # TN - pastel green
+        (0, 1): '#F7B7A3',  # FP - pastel coral
+        (1, 0): '#FFD97D',  # FN - pastel yellow
+        (1, 1): '#90B3D4',  # TP - pastel blue
+    }
+
+    for i, (model_name, preds) in enumerate(data.items()):
+        y_true = preds['y_true']
+        y_pred = preds['y_pred']
+        cm = confusion_matrix(y_true, y_pred)
+
+        ax = axes[i]
+        for (row, col), color in cell_colors.items():
+            ax.fill_between([col, col+1], row, row+1, color=color, edgecolor=None)
+
+            count = cm[row, col]
+            ax.text(col + 0.5, row + 0.5, str(count), ha='center', va='center',
+                    fontsize=14, fontweight='bold', color='black')
+
+        ax.set_title(model_name, fontsize=12, pad=10)
+        ax.set_xticks(np.arange(2) + 0.5)
+        ax.set_yticks(np.arange(2) + 0.5)
+        ax.set_xticklabels(['Pred 0', 'Pred 1'], fontsize=10)
+        ax.set_yticklabels(['True 0', 'True 1'], fontsize=10)
+        ax.invert_yaxis()
+        ax.set_xlim(0, 2)
+        ax.set_ylim(0, 2)
+        ax.grid(False)
+        ax.tick_params(length=0)
+
+    for j in range(i+1, len(axes)):
+        fig.delaxes(axes[j])
+
+    plt.tight_layout()
+    plt.show()
 
 
 
