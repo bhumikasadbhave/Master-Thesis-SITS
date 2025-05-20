@@ -220,12 +220,12 @@ def filter_non_sugarbeet_fields(temporal_images, sugarbeet_content_csv_path):
     valid_fields = set(sugarbeet_df['FIELDUSNO'].astype(int).unique())
     filtered_images = []
     for img in temporal_images:
-        field_numbers = np.unique(img[0][:, :, -2])
+        field_numbers = np.unique(img[0][:, :, -2])                  #acquisition date
         non_zero_fields = field_numbers[field_numbers != 0]
         if any(fn in valid_fields for fn in non_zero_fields):       #keep the images with atleast 1 valid field number
             filtered_images.append(img)
     return filtered_images
-
+#yyyyddmm.0
 
 # Function to get the Non-temporal instances for extracted patches. They are later used for performing preliminary test 
 def get_non_temporal_images(temporal_images):
