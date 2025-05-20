@@ -5,6 +5,7 @@ from model_scripts.train_model_ae import *
 from evaluation_scripts.evaluation_helper import *
 from model_scripts.clustering import *
 import pickle
+import random
 import copy
 
 
@@ -95,7 +96,7 @@ def train_model_multiple_runs_with_metrics(
         combined_train_coords = train_coord_dl + test_coord_dl
 
         # Clustering
-        kmeans = kmeans_function(combined_train_features, n_clusters=2, random_state=21)
+        kmeans = kmeans_function(combined_train_features, n_clusters=2, random_state=random.randint(1, 100))
         eval_preds = kmeans.predict(eval_features.reshape(eval_features.size(0), -1).numpy().astype(np.float32))
 
         # Evaluation
