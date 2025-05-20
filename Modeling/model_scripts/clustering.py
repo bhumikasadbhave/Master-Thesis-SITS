@@ -1,7 +1,7 @@
 from sklearn.cluster import KMeans
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import DBSCAN
-from sklearn_extra.cluster import KMedoids
+# from sklearn_extra.cluster import KMedoids
 import numpy as np
 
 def kmeans_function(train_patches, n_clusters, random_state=10):
