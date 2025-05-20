@@ -21,10 +21,10 @@ labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS
 sugarbeet_content_csv_path = "/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2019_sugar_content.csv"
 
 #### --- Server Paths --- ####
-# load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
-# load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
-# images_save_path = '/home/k64835/SITS-images/output/'
-# labels_path = '/home/k64835/SITS-images/labels.csv'
+load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
+load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
+deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
+labels_path = '/home/k64835/SITS-images/labels.csv'
 
 fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
 # labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
@@ -78,7 +78,14 @@ ae_3d_mvi_path = '/home/k64835/SITS-models/vi/ae_mvi.pkl'
 kmeans_ae_3D_mvi_path = '/home/k64835/SITS-models/vi/kmeans_ae_mvi.pkl'
 ae_3d_b4_path = '/home/k64835/SITS-models/vi/ae_b4.pkl'
 kmeans_ae_3D_b4_path = '/home/k64835/SITS-models/vi/kmeans_ae_b4.pkl'
-mae_save_dir = '/home/k64835/'
+
+
+# -- Result JSONs for all AE-based models and experiments -- ##
+results_json_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results'
+
+# -- Best Model Saved Model path -- #
+best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_temporal_addition_best_model.pkl'
+
 
 #### Data Parameters ####
 temporal_points = [
@@ -110,4 +117,4 @@ max_date_diff = 115
 
 ae_batch_size = 64
 ae_train_test_ratio = 0.8
-
+mae_save_dir = '/home/k64835/'
