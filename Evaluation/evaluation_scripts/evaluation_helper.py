@@ -59,34 +59,22 @@ def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, grou
         field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
 
     # Arrange predicted and true labels in lists
-    y_pred = []
-    y_true = []
+    y_pred1 = []
+    y_true1 = []
     for field_number, predicted_label in field_labels.items():
         if field_number in ground_truth:
             true_label = ground_truth[field_number]
-            y_pred.append(predicted_label)
-            y_true.append(true_label)
+            y_pred1.append(predicted_label)
+            y_true1.append(true_label)
 
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
-
-    #Save y_pred and y_true
-    if save_pred==True:
-        file_path = config.predictions_path
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-        else:
-            data = {}
-        data[model_name] = {'y_true': y_true.tolist(), 'y_pred': y_pred.tolist()}
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=2)
+    y_pred1 = np.array(y_pred1)
+    y_true1 = np.array(y_true1)
         
-    acc_1 = np.mean(y_pred == y_true)
-    recall_1 = recall_score(y_true, y_pred)
-    precision_1 = precision_score(y_true, y_pred)
-    f1_1 = f1_score(y_true, y_pred)
-    f2_1 = fbeta_score(y_true, y_pred, beta=2)
+    acc_1 = np.mean(y_pred1 == y_true1)
+    recall_1 = recall_score(y_true1, y_pred1)
+    precision_1 = precision_score(y_true1, y_pred1)
+    f1_1 = f1_score(y_true1, y_pred1)
+    f2_1 = fbeta_score(y_true1, y_pred1, beta=2)
         
 
     ## Scenario 2: cluster 0=disease
@@ -98,26 +86,40 @@ def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, grou
         field_labels[field_number] = 1 if diseased_subpatch_count >= (threshold * len(predictions)) else 0
 
     # Arrange predicted and true labels in lists
-    y_pred = []
-    y_true = []
+    y_pred0 = []
+    y_true0 = []
     for field_number, predicted_label in field_labels.items():
         if field_number in ground_truth:
             true_label = ground_truth[field_number]
-            y_pred.append(predicted_label)
-            y_true.append(true_label)
+            y_pred0.append(predicted_label)
+            y_true0.append(true_label)
 
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
+    y_pred0 = np.array(y_pred0)
+    y_true0 = np.array(y_true0)
 
-    acc_0 = np.mean(y_pred == y_true)
-    recall_0 = recall_score(y_true, y_pred)
-    precision_0 = precision_score(y_true, y_pred)
-    f1_0 = f1_score(y_true, y_pred)
-    f2_0 = fbeta_score(y_true, y_pred, beta=2)
+    acc_0 = np.mean(y_pred0 == y_true0)
+    recall_0 = recall_score(y_true0, y_pred0)
+    precision_0 = precision_score(y_true0, y_pred0)
+    f1_0 = f1_score(y_true0, y_pred0)
+    f2_0 = fbeta_score(y_true0, y_pred0, beta=2)
 
 
     # Return the metrics with the best assumption: the one with highest recall
     if recall_1 > recall_0:
+        
+        #Save y_pred and y_true
+        if save_pred==True:
+            file_path = config.predictions_path
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+            else:
+                data = {}
+            data[model_name] = {'y_true': y_true1.tolist(), 'y_pred': y_pred1.tolist()}
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        
+        # Return things
         return (
             1,
             round(acc_1 * 100, 2),
@@ -127,6 +129,20 @@ def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, grou
             round(f2_1 * 100, 2),
         )
     else:
+        #Save y_pred and y_true
+        if save_pred==True:
+            file_path = config.predictions_path
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+            else:
+                data = {}
+            data[model_name] = {'y_true': y_true0.tolist(), 'y_pred': y_pred0.tolist()}
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+        
+        # Return things
+
         return (
             0,
             round(acc_0 * 100, 2),

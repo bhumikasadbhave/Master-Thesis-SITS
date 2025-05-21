@@ -15,10 +15,12 @@ save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semest
 save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
 
 #### Local Paths to save extracted patch level images
-load_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
-load_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
-labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
-sugarbeet_content_csv_path = "/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2019_sugar_content.csv"
+# load_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
+# load_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
+# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
+# sugarbeet_content_csv_path = "/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2019_sugar_content.csv"
+# fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
+# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
 #### --- Server Paths --- ####
 load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
@@ -26,11 +28,9 @@ load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
 deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
 labels_path = '/home/k64835/SITS-images/labels.csv'
 
-fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
-# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
 #### Filtering fields that are not sugarbeet 
-# sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"
+sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"
 
 #### Trained Model Save Paths: Clustering Algorithms (Baseline 1) ####
 kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'
@@ -82,9 +82,10 @@ kmeans_ae_3D_b4_path = '/home/k64835/SITS-models/vi/kmeans_ae_b4.pkl'
 
 # -- Result JSONs for all AE-based models and experiments -- ##
 results_json_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results'
+predictions_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/predictions.json'
 
 # -- Best Model Saved Model path -- #
-best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_temporal_addition_best_model.pkl'
+best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_16_best_model.pkl'
 
 
 #### Data Parameters ####
@@ -97,17 +98,17 @@ temporal_points = [
 
 
 #### --- Local Paths --- ####
-kmeans_b10_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_kmeans/kmeans_b10.pkl'
-kmeans_hist_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_cv/kmeans_hist.pkl'
-ae_3d_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
-ae_kmeans_3d_local = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
-ae_2D_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/ae_2D.pkl'
-ae_kmeans_2d_local = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/kmeans_ae_2D.pkl'
-predictions_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/GITHUB/Master-Thesis-SITS/Modeling/Results/predictions.json'
+# kmeans_b10_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_kmeans/kmeans_b10.pkl'
+# kmeans_hist_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_cv/kmeans_hist.pkl'
+# ae_3d_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
+# ae_kmeans_3d_local = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
+# ae_2D_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/ae_2D.pkl'
+# ae_kmeans_2d_local = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_ae/kmeans_ae_2D.pkl'
+# predictions_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/GITHUB/Master-Thesis-SITS/Modeling/Results/predictions.json'
 
 #### Other Parameters ####
 patch_size = (64, 64)
-subpatch_size = 4
+subpatch_size = 16
 batch_size=64
 subpatch_to_patch_threshold = 0.5
 temporal_stack_size = 7

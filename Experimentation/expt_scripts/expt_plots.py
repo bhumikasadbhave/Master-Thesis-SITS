@@ -202,25 +202,27 @@ def plot_confusion_matrices(json_path):
 
 
 
-def plot_confusion_matrices_no_borders(json_path):
+def plot_confusion_matrices(json_path):
     with open(json_path, 'r') as f:
         data = json.load(f)
 
     num_models = len(data)
-    cols = math.ceil(math.sqrt(num_models))
-    rows = math.ceil(num_models / cols)
+    # cols = math.ceil(math.sqrt(num_models))
+    # rows = math.ceil(num_models / cols)
+    cols = num_models
+    rows = 1
 
-    fig, axes = plt.subplots(rows, cols, figsize=(4*cols, 3.5*rows))
+    fig, axes = plt.subplots(rows, cols, figsize=(4.5 * cols, 4.5 * rows))
     if num_models == 1:
         axes = [axes]
     else:
         axes = axes.flatten()
 
     cell_colors = {
-        (0, 0): '#A8D5BA',  # TN - pastel green
-        (0, 1): '#F7B7A3',  # FP - pastel coral
-        (1, 0): '#FFD97D',  # FN - pastel yellow
-        (1, 1): '#90B3D4',  # TP - pastel blue
+        (0, 0): '#C8E6C9',  # TN
+        (0, 1): '#FFCDD2',  # FP
+        (1, 0): '#FFF9C4',  # FN
+        (1, 1): '#BBDEFB',  # TP
     }
 
     for i, (model_name, preds) in enumerate(data.items()):
@@ -229,30 +231,42 @@ def plot_confusion_matrices_no_borders(json_path):
         cm = confusion_matrix(y_true, y_pred)
 
         ax = axes[i]
-        for (row, col), color in cell_colors.items():
-            ax.fill_between([col, col+1], row, row+1, color=color, edgecolor=None)
+        # for (row, col), color in cell_colors.items():
+        #     ax.fill_between([col, col+1], row, row+1, color=color, edgecolor=None)
 
-            count = cm[row, col]
-            ax.text(col + 0.5, row + 0.5, str(count), ha='center', va='center',
-                    fontsize=14, fontweight='bold', color='black')
+        #     count = cm[row, col]
+        #     ax.text(col + 0.5, row + 0.5, str(count), ha='center', va='center',
+        #             fontsize=14, fontweight='bold', color='black')
 
-        ax.set_title(model_name, fontsize=12, pad=10)
+        ax.set_title(model_name, fontsize=20, pad=10)
         ax.set_xticks(np.arange(2) + 0.5)
         ax.set_yticks(np.arange(2) + 0.5)
-        ax.set_xticklabels(['Pred 0', 'Pred 1'], fontsize=10)
-        ax.set_yticklabels(['True 0', 'True 1'], fontsize=10)
+        ax.set_xticklabels(['Pred 0', 'Pred 1'], rotation=0, fontsize=16)
+        ax.set_yticklabels(['True 0', 'True 1'], rotation=90, fontsize=16)
         ax.invert_yaxis()
         ax.set_xlim(0, 2)
         ax.set_ylim(0, 2)
-        ax.grid(False)
         ax.tick_params(length=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        # Draw cells with labels
+        for row in range(2):
+            for col in range(2):
+                ax.add_patch(plt.Rectangle((col, row), 1, 1,
+                                           facecolor=cell_colors[(row, col)],
+                                           edgecolor='white', lw=2))
+                value = cm[row, col]
+                ax.text(col + 0.5, row + 0.5, str(value),
+                        ha='center', va='center',
+                        fontsize=20, fontweight='bold', color='black')
+
+        ax.set_title(model_name, fontsize=20, pad=10)
 
     for j in range(i+1, len(axes)):
         fig.delaxes(axes[j])
 
     plt.tight_layout()
     plt.show()
-
-
 
 
