@@ -85,7 +85,9 @@ results_json_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results'
 predictions_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/predictions.json'
 
 # -- Best Model Saved Model path -- #
-best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_16_best_model.pkl'
+best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_temporal_addition_best_model.pkl'
+best_8_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_8_best_model.pkl'
+best_16_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_16_best_model.pkl'
 
 
 #### Data Parameters ####
@@ -108,7 +110,7 @@ temporal_points = [
 
 #### Other Parameters ####
 patch_size = (64, 64)
-subpatch_size = 16
+subpatch_size = 4
 batch_size=64
 subpatch_to_patch_threshold = 0.5
 temporal_stack_size = 7
