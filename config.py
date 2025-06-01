@@ -28,7 +28,6 @@ load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
 deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
 labels_path = '/home/k64835/SITS-images/labels.csv'
 
-
 #### Filtering fields that are not sugarbeet 
 sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"
 
@@ -97,6 +96,7 @@ temporal_points = [
     ("august", "2019-08-01", "2019-08-30"),
     ("september", "2019-09-01", "2019-09-15")
 ]
+reference_date_temp_encoding='20190601.0'
 
 
 #### --- Local Paths --- ####

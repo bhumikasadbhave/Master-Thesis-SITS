@@ -461,7 +461,7 @@ def mvi_temporal_cubes_with_temp_encoding_returned(temporal_images, method='sin-
 
             # --- Temporal encoding to be ADDED to existing pixel values ---
             if method == 'single':
-                date_embedding = get_single_date_embedding(date_unique, ref_date='20190601.0')  # scalar
+                date_embedding = get_single_date_embedding(date_unique, ref_date=config.reference_date_temp_encoding)  # scalar
                 date_embeddings.append(date_embedding)
 
             elif method == 'sin-cos':
@@ -503,6 +503,10 @@ def get_single_date_embedding(date_str, ref_date='20190601.0', max_val=106):
     # return embedding
     if date_str=='20190600.0' or date_str=='20190700.0' or date_str=='20190800.0' or date_str=='20190900.0':
          date_str='20190601.0'
+    
+    if date_str=='20240600.0' or date_str=='20240700.0' or date_str=='20240800.0' or date_str=='20240900.0':
+         date_str='20240601.0'
+
     date = datetime.strptime(date_str, "%Y%m%d.%f")  # Parse the date string into a datetime object
     ref = datetime.strptime(ref_date, "%Y%m%d.%f")  # Parse the reference date string
 
@@ -518,6 +522,9 @@ def get_sin_cos_date_embedding(date_str, max_val=106):
 
     if date_str=='20190600.0' or date_str=='20190700.0' or date_str=='20190800.0' or date_str=='20190900.0':
          date_str='20190601.0'
+
+    if date_str=='20240600.0' or date_str=='20240700.0' or date_str=='20240800.0' or date_str=='20240900.0':
+         date_str='20240601.0'
 
     date_int = int(date_str.split('.')[0]) 
     date_obj = datetime.strptime(str(date_int), "%Y%m%d")
