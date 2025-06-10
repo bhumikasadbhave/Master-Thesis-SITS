@@ -21,7 +21,7 @@ from skimage import color
 
 ###### -------------------------- Classical techniques for feature extraction -------------------------- ######
 
-# 1. Channel-wise histogram features
+# 1. Histogram features
 def extract_channel_histograms(data, bins=32):
     """ Returns: numpy array of shape (N, T, C * bins): Flattened histograms per time step and channel"""
 
@@ -40,6 +40,24 @@ def extract_channel_histograms(data, bins=32):
         all_features.append(sample_feats)
 
     return np.array(all_features)
+
+def extract_global_histogram(data, bins=32):
+    """
+    data: shape (N, T, C, H, W)
+    returns: (N, bins) feature matrix
+    """
+    N = data.shape[0]
+    features = []
+    for i in range(N):
+        flat_vals = data[i].flatten()
+        valid_vals = flat_vals[flat_vals != 0]
+        hist, _ = np.histogram(valid_vals, bins=bins, range=(1e-6, 1))
+        hist = hist.astype(np.float32)
+        hist += 1e-6  # smoothing
+        hist /= hist.sum()  # normalize
+        features.append(hist)
+
+    return np.array(features)
 
 
 # 2. Feature reduction using PCA on the channel dimension of Sentinel-2 data

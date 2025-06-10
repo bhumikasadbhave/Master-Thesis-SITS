@@ -28,22 +28,65 @@ def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold 
     plt.show()
 
 def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Recall'):
-    """ Plots recall against thresholds. """
+
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    plt.plot(recalls[1:], accuracies[1:], label='Precision vs Recall', color="#4C72B0", linewidth=1.5)
+    plt.scatter(recalls[1:], accuracies[1:], color="red", s=40)
+
+    for i in range(1, len(thresholds)):
+        plt.annotate(f'{thresholds[i]:.2f}',
+                     (recalls[i], accuracies[i]),
+                     textcoords="offset points",
+                     xytext=(0, 6),
+                     ha='center',
+                     fontsize=10,
+                     color='black')
+    
+    plt.title(title, fontsize=16)
+    plt.xlabel('Recall (%)', fontsize=14)
+    plt.ylabel('Accuracy (%)', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_acc_vs_recall_for_paper(thresholds, accuracies_dict, recalls_dict, title=''):
     
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    plt.plot(accuracies[1:], recalls[1:], label='Recall', color="#4C72B0", linewidth=1.5)
-    # plt.plot(thresholds[1:], accuracies[1:], label='Accuracy', color="orange", linewidth=1.5)
-    plt.title(title, fontsize=16)
-    plt.xlabel('Accuracy (%)', fontsize=14)
-    plt.ylabel('Recall (%)', fontsize=14)
-    # plt.xticks(thresholds, rotation=45, fontsize=10)
-    # plt.yticks([i for i in range(0,110,10)], fontsize=10)
-    # plt.ylim(0, 105)
+    
+    key_indices = [1,6,10]  # just a few labels
+    
+    for model_name in accuracies_dict:
+        acc = accuracies_dict[model_name]
+        rec = recalls_dict[model_name]
+        
+        plt.plot(rec[1:], acc[1:], label=model_name, linewidth=1.5)
+
+        for i in key_indices:
+            plt.scatter(rec[i], acc[i], s=30, color='gray', zorder=3)
+            plt.annotate(f'{thresholds[i]:.1f}',
+                        (rec[i], acc[i]),
+                        textcoords="offset points",
+                        xytext=(0, -25),
+                        ha='center',
+                        fontsize=12,
+                        color='black')
+    
+    # plt.title(title, fontsize=16)
+    plt.xlabel('Recall (%)', fontsize=16)
+    plt.ylabel('Precision (%)', fontsize=16)
     plt.grid(True, linestyle='--', alpha=0.4)
-    # plt.legend(fontsize=12)
+    # Add dummy scatter for threshold marker legend
+    plt.scatter([], [], color='gray', s=30, label='Threshold')
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(fontsize=12, loc='upper right')
     plt.tight_layout()
     plt.show()
+
+
 
 
 def plot_accuracies(thresholds, accuracies_dict, title='Threshold vs Accuracies'):
