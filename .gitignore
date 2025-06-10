@@ -1,2 +1,4 @@
 *.pyc
 Modeling/Results/Trained_Models/
+venv/
+.venv/
