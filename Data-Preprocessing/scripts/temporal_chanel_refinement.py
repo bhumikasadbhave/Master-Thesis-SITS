@@ -301,6 +301,7 @@ def b10_temporal_cubes_with_temp_encoding_returned(temporal_images, method='sin-
             date_unique = str(date_unique[0])
 
             sentinel_bands = image[..., :10]  # Shape: (H, W, 10)
+            # print(date_unique)
 
             # --- Temporal encoding to be ADDED to existing pixel values ---
             if method == 'single':
@@ -527,6 +528,7 @@ def get_sin_cos_date_embedding(date_str, max_val=106):
          date_str='20240601.0'
 
     date_int = int(date_str.split('.')[0]) 
+    # print(date_str)
     date_obj = datetime.strptime(str(date_int), "%Y%m%d")
     
     doy = date_obj.timetuple().tm_yday  # Integer in [1, 365/366]
