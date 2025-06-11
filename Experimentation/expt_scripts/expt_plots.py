@@ -14,11 +14,11 @@ def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold 
     
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    plt.plot(thresholds[1:], recalls[1:], label='Recall', color="#4C72B0", linewidth=1.5)
+    plt.plot(thresholds[1:], recalls[1:], label='F1-score', color="#4C72B0", linewidth=1.5)
     plt.plot(thresholds[1:], accuracies[1:], label='Accuracy', color="orange", linewidth=1.5)
     plt.title(title, fontsize=16)
     plt.xlabel('Threshold', fontsize=14)
-    plt.ylabel('Accuracy and Recall (%)', fontsize=14)
+    plt.ylabel('Accuracy and F1-score (%)', fontsize=14)
     plt.xticks(thresholds, rotation=45, fontsize=10)
     plt.yticks([i for i in range(0,110,10)], fontsize=10)
     plt.ylim(0, 105)
@@ -27,8 +27,31 @@ def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold 
     plt.tight_layout()
     plt.show()
 
-def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Recall'):
 
+def plot_f1_scores_vs_thresholds(thresholds, f1_scores_dict, title='F1 Score vs Threshold'):
+    """
+    Plot F1 scores for multiple models versus thresholds.
+    """
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    
+    for model_name, f1_scores in f1_scores_dict.items():
+        plt.plot(thresholds, f1_scores, label=model_name, linewidth=2)
+        
+    plt.title(title, fontsize=16)
+    plt.xlabel('Threshold', fontsize=14)
+    plt.ylabel('F1 Score (%)', fontsize=14)
+    plt.xticks(thresholds, rotation=45, fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.ylim(0, 100)
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.legend(fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Recall'):
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
     plt.plot(recalls[1:], accuracies[1:], label='Precision vs Recall', color="#4C72B0", linewidth=1.5)
@@ -38,7 +61,7 @@ def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Reca
         plt.annotate(f'{thresholds[i]:.2f}',
                      (recalls[i], accuracies[i]),
                      textcoords="offset points",
-                     xytext=(0, 6),
+                     xytext=(0, 3),
                      ha='center',
                      fontsize=10,
                      color='black')
@@ -51,38 +74,36 @@ def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Reca
     plt.show()
 
 
+
 def plot_acc_vs_recall_for_paper(thresholds, accuracies_dict, recalls_dict, title=''):
-    
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    
-    key_indices = [1,6,10]  # just a few labels
     
     for model_name in accuracies_dict:
         acc = accuracies_dict[model_name]
         rec = recalls_dict[model_name]
         
+        # Plot line
         plt.plot(rec[1:], acc[1:], label=model_name, linewidth=1.5)
-
-        for i in key_indices:
+        
+        # Plot and annotate all thresholds
+        for i in range(1, len(thresholds)):
             plt.scatter(rec[i], acc[i], s=30, color='gray', zorder=3)
             plt.annotate(f'{thresholds[i]:.1f}',
-                        (rec[i], acc[i]),
-                        textcoords="offset points",
-                        xytext=(0, -25),
-                        ha='center',
-                        fontsize=12,
-                        color='black')
+                         (rec[i], acc[i]),
+                         textcoords="offset points",
+                         xytext=(0, -20),
+                         ha='center',
+                         fontsize=10,
+                         color='black')
     
-    # plt.title(title, fontsize=16)
-    plt.xlabel('Recall (%)', fontsize=16)
-    plt.ylabel('Precision (%)', fontsize=16)
+    plt.xlabel('F1-score (%)', fontsize=16)
+    plt.ylabel('Accuracy (%)', fontsize=16)
     plt.grid(True, linestyle='--', alpha=0.4)
-    # Add dummy scatter for threshold marker legend
-    plt.scatter([], [], color='gray', s=30, label='Threshold')
+    plt.scatter([], [], color='gray', s=30, label='Threshold')  # Dummy legend entry
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-    plt.legend(fontsize=12, loc='upper right')
+    plt.legend(fontsize=12, loc='upper left')
     plt.tight_layout()
     plt.show()
 
