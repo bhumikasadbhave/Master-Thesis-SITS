@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.colors as mcolors
 import math
+from collections import defaultdict
 
 def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold vs Recall'):
     """ Plots recall against thresholds. """
@@ -27,25 +28,28 @@ def plot_threshold_vs_metrics(thresholds, accuracies, recalls, title='Threshold 
     plt.tight_layout()
     plt.show()
 
-
-def plot_f1_scores_vs_thresholds(thresholds, f1_scores_dict, title='F1 Score vs Threshold'):
+def plot_f1_scores_vs_thresholds(thresholds, f1_scores_dict, title='F1-score at varying thresholds'):
     """
-    Plot F1 scores for multiple models versus thresholds.
+    Plot F1 scores for multiple models versus thresholds with gray threshold markers.
     """
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
     
     for model_name, f1_scores in f1_scores_dict.items():
+        # Plot the line
         plt.plot(thresholds, f1_scores, label=model_name, linewidth=2)
         
-    plt.title(title, fontsize=16)
-    plt.xlabel('Threshold', fontsize=14)
-    plt.ylabel('F1 Score (%)', fontsize=14)
-    plt.xticks(thresholds, rotation=45, fontsize=10)
-    plt.yticks(fontsize=10)
+        # Plot gray points (threshold markers)
+        # plt.scatter(thresholds, f1_scores, s=40, color='gray', zorder=3)
+
+    plt.title(title, fontsize=18)
+    plt.xlabel('Threshold', fontsize=16)
+    plt.ylabel('F1 Score (%)', fontsize=16)
+    plt.xticks(thresholds, rotation=45, fontsize=12)
+    plt.yticks(fontsize=12)
     plt.ylim(0, 100)
     plt.grid(True, linestyle='--', alpha=0.4)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=14)
     plt.tight_layout()
     plt.show()
 
@@ -74,38 +78,47 @@ def plot_acc_vs_recall(thresholds, accuracies, recalls, title='Threshold vs Reca
     plt.show()
 
 
-
-def plot_acc_vs_recall_for_paper(thresholds, accuracies_dict, recalls_dict, title=''):
+def plot_acc_vs_recall_for_paper(thresholds, accuracies_dict, recalls_dict, title='PR curve'):
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    
+
     for model_name in accuracies_dict:
         acc = accuracies_dict[model_name]
         rec = recalls_dict[model_name]
-        
+
         # Plot line
-        plt.plot(rec[1:], acc[1:], label=model_name, linewidth=1.5)
-        
-        # Plot and annotate all thresholds
+        plt.plot(rec[1:], acc[1:], label=model_name, linewidth=2)
+
+        # Collect all thresholds at each point
+        point_to_thresholds = defaultdict(list)
         for i in range(1, len(thresholds)):
-            plt.scatter(rec[i], acc[i], s=30, color='gray', zorder=3)
-            plt.annotate(f'{thresholds[i]:.1f}',
-                         (rec[i], acc[i]),
+            key = (rec[i], acc[i])
+            point_to_thresholds[key].append(f'{thresholds[i]:.1f}')
+
+        # Plot and annotate all unique points
+        for (x, y), threshold_list in point_to_thresholds.items():
+            label = ", ".join(threshold_list)
+            plt.scatter(x, y, s=40, color='gray', zorder=3)
+            plt.annotate(label,
+                         (x, y),
                          textcoords="offset points",
-                         xytext=(0, -20),
+                         xytext=(0, -15),
                          ha='center',
                          fontsize=10,
                          color='black')
-    
-    plt.xlabel('F1-score (%)', fontsize=16)
-    plt.ylabel('Accuracy (%)', fontsize=16)
-    plt.grid(True, linestyle='--', alpha=0.4)
-    plt.scatter([], [], color='gray', s=30, label='Threshold')  # Dummy legend entry
+
+    plt.xlabel('Recall (%)', fontsize=16)
+    plt.ylabel('Precision (%)', fontsize=16)
+    plt.title(title, fontsize=18)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.scatter([], [], color='gray', s=40, label='Thresholds')  # Dummy legend
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-    plt.legend(fontsize=12, loc='upper left')
+    plt.legend(fontsize=12, loc='best')
     plt.tight_layout()
     plt.show()
+
+
 
 
 
