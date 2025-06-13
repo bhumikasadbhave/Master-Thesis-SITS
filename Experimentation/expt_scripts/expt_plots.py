@@ -37,7 +37,7 @@ def plot_f1_scores_vs_thresholds(thresholds, f1_scores_dict, title='F1-score at 
     
     for model_name, f1_scores in f1_scores_dict.items():
         # Plot the line
-        plt.plot(thresholds, f1_scores, label=model_name, linewidth=2)
+        plt.plot(thresholds[1:], f1_scores[1:], label=model_name, linewidth=2)
         
         # Plot gray points (threshold markers)
         # plt.scatter(thresholds, f1_scores, s=40, color='gray', zorder=3)
@@ -45,7 +45,7 @@ def plot_f1_scores_vs_thresholds(thresholds, f1_scores_dict, title='F1-score at 
     plt.title(title, fontsize=18)
     plt.xlabel('Threshold', fontsize=16)
     plt.ylabel('F1 Score (%)', fontsize=16)
-    plt.xticks(thresholds, rotation=45, fontsize=12)
+    plt.xticks(thresholds[1:], rotation=45, fontsize=12)
     plt.yticks(fontsize=12)
     plt.ylim(0, 100)
     plt.grid(True, linestyle='--', alpha=0.4)
