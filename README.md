@@ -14,7 +14,6 @@ The system integrates temporal feature extraction and clustering to identify str
 ## 🧱 Project Structure
 <pre>
 <code>
-```
 ├── Data-Preprocessing/
 │   ├── Pipeline/                        # Preprocessing pipeline and script
 │   ├── scripts/                         # Functions for data loading, preprocessing, visualization
@@ -34,6 +33,5 @@ The system integrates temporal feature extraction and clustering to identify str
 ├── config.py                           # Configuration paths and parameters
 ├── stress_detection_script.py         # Main pipeline script for future data
 └── README.md
-```
 </code>
 </pre>
