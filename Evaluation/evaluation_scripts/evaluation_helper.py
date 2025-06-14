@@ -103,6 +103,8 @@ def evaluate_clustering_metrics(subpatch_coordinates, subpatch_predictions, grou
     f1_0 = f1_score(y_true0, y_pred0)
     f2_0 = fbeta_score(y_true0, y_pred0, beta=2)
 
+    # unique, counts = np.unique(y_true1, return_counts=True)
+    # print(dict(zip(unique, counts)))
 
     # Return the metrics with the best assumption: the one with highest recall
     if recall_1 > recall_0:
