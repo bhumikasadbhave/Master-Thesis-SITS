@@ -5,14 +5,20 @@ sentinel_id_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MAS
 
 
 ### --- Paths for field extraction and saving from 1000x1000 images --- ###
+## 2019 data ##
+# #temporal raw images path
+# sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/'
+# sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/eval/'
 
-#temporal raw images path
-sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/'
-sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/eval/'
+# #Path to the base directory where image patches of extracted fields/patches are to be saved
+# save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Train'
+# save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
 
-#Path to the base directory where image patches of extracted fields/patches are to be saved
-save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Train'
-save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
+## 2024 data ##
+sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_train'
+sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_eval'
+save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/train'
+save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/eval'
 
 #### Local Paths to save extracted patch level images
 # load_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
@@ -98,6 +104,14 @@ temporal_points = [
 ]
 reference_date_temp_encoding='20190601.0'
 
+# 2024 points
+temporal_points_2024 = [
+    ("june", "2024-06-01", "2024-06-30"),
+    ("july", "2024-07-01", "2024-07-31"),
+    ("august", "2024-08-01", "2024-08-30"),
+    ("september", "2024-09-01", "2024-09-15")
+]
+temporal_stack_size_2024 = 4
 
 #### --- Local Paths --- ####
 # kmeans_b10_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_kmeans/kmeans_b10.pkl'
