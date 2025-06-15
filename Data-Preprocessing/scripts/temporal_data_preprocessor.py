@@ -151,6 +151,74 @@ def refine_temporal_stack_interval5(temporal_stack_patches, stack_size, date_ran
     return final_patches
 
 
+def refine_temporal_stack_interval_2024(temporal_stack_patches, stack_size, date_ranges):
+    """
+    Refine 2024 data temporal stacks by selecting cloud-free images within specified date ranges.
+    Args: temporal_stack_patches (list): List of patches, where each patch is a temporal stack of images
+                                       Each image has 12 channels:
+                                       - 12th channel: date values in yyyymmdd.0 format
+                                       - 11th channel: sugarbeet field mask (1 indicates field, 0 no field)
+                                       - 10th channel: cloud mask (1 indicates cloud, 0 no cloud)
+        stack_size (int): Number of date ranges (should match len(date_ranges))
+        date_ranges (list): List of tuples (label, start_date, end_date) with date ranges
+    Returns: list: Refined temporal stack patches that meet the criteria
+    """
+    final_patches = []
+    
+    for patch_stack in temporal_stack_patches:
+        patch_flags = np.zeros(stack_size)
+        refined_patch_stack = []
+        selected_dates = []  
+
+        for idx, (_, start_date, end_date) in enumerate(date_ranges):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            date_selected = False
+            images_found = 0  
+
+            for temporal_image in patch_stack:
+                date_channel = temporal_image[..., 12]          # 13th channel: date values
+                field_mask = temporal_image[..., 11]            # 12th channel: sugar-beet field id mask
+                binary_mask = (field_mask > 0).astype(np.uint8) # Binary mask for sugar-beet fields
+                cloud_mask = temporal_image[..., 10]            # 10th channel: cloud mask
+                valid_dates = date_channel[date_channel != 0]   # Non-zero date values
+
+                if len(valid_dates) == 0:
+                    continue
+
+                int_date = int(valid_dates[0])  # Date: yyyymmdd.0
+                year = int_date // 10000
+                month = (int_date // 100) % 100
+                day = int_date % 100
+                image_date = datetime(year, month, day)
+
+                # Check if the image is within the date range and meets the 5-day condition
+                if start_date <= image_date <= end_date:
+                    # Ensure a minimum 5-day gap from already selected dates
+                    # if all(abs((image_date - prev_date).days) >= 5 for prev_date in selected_dates):
+                    field_pixels = binary_mask == 1                          # Identify pixels corresponding to sugar-beet fields
+                    cloud_free = np.all(cloud_mask[field_pixels] == 1)       # Check if field pixels are cloud-free
+                    if cloud_free:
+                        print('cloud-free')
+                        refined_patch_stack.append(temporal_image)
+                        patch_flags[idx] = 1
+                        selected_dates.append(image_date)  # Store the selected date
+                        images_found += 1
+
+                        if images_found == 1:  # Stop after finding two valid images for this range
+                            patch_flags[idx] = 1 #+ len(date_ranges)] = 1
+                            break
+
+        # Append the patch stack only if all date ranges have at least one image
+        if np.all(patch_flags != 0):
+            final_patches.append(refined_patch_stack)
+        else:
+            print(f"Patch discarded: Missing images for some date ranges.")
+            print(f"Flag array was: ", patch_flags)
+
+    return final_patches
+
+
 def blacken_field_borders_temporal(images):
     """
     Blacken the border pixels of sugarbeet fields in channels 0-9 for all temporal images based on the mask in channel 11.
@@ -220,7 +288,7 @@ def filter_non_sugarbeet_fields(temporal_images, sugarbeet_content_csv_path):
     valid_fields = set(sugarbeet_df['FIELDUSNO'].astype(int).unique())
     filtered_images = []
     for img in temporal_images:
-        field_numbers = np.unique(img[0][:, :, -2])                  #acquisition date
+        field_numbers = np.unique(img[0][:, :, -2])                  #field number channel
         non_zero_fields = field_numbers[field_numbers != 0]
         if any(fn in valid_fields for fn in non_zero_fields):       #keep the images with atleast 1 valid field number
             filtered_images.append(img)
