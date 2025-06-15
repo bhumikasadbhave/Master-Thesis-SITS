@@ -100,13 +100,13 @@ class PreProcessingPipelineTemporal:
             temporal_images = load_field_images_temporal(self.load_eval_dir)
         else:
             raise ValueError("dataset_type must be either 'train' or 'test'")
-        
 
         # Step 4: Remove the border pixels of the sugarbeet fields
         border_removed_images = blacken_field_borders_temporal(temporal_images)
 
         # Step 4: Channel-wise Normalisation
         normalized_images = normalize_images(border_removed_images)
+        # print("After norm",np.unique(normalized_images[0][0][:,:,-1]))
 
         # Step 5: Select relevant Vegetation Indices and Sentinel-2 Bands
         band_selection_methods = {

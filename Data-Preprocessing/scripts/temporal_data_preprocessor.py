@@ -183,15 +183,14 @@ def normalize_images(temporal_images):
         field_normalized_images = []
         
         for temporal_image in field_images:
-            normalized_temporal_image = np.zeros_like(temporal_image, dtype=np.float32)
+            normalized_temporal_image = np.zeros_like(temporal_image)
             num_channels = temporal_image.shape[2]
             
             for c in range(num_channels): 
 
                 # Skip normalization for the last 3 channels (masks etc.)
                 if c >= num_channels - 3:
-                    normalized_temporal_image[:, :, c] = temporal_image[:, :, c]
-
+                    normalized_temporal_image[:, :, c] = temporal_image[:, :, c].astype(np.float32)
                 else:
                     band = temporal_image[:, :, c]
                     band_min = np.min(band)
@@ -210,6 +209,7 @@ def normalize_images(temporal_images):
                     
             field_normalized_images.append(normalized_temporal_image)
         normalized_images.append(field_normalized_images)
+        # print(np.unique(normalized_images[0][0][:,:,-1]))
     return normalized_images
 
 
