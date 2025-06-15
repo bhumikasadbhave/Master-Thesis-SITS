@@ -58,7 +58,7 @@ def train_model_multiple_runs_with_metrics(
                 epochs=epochs, optimizer=optimizer, lr=lr,
                 momentum=momentum, device=device
             )
-        if model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4', '3D_AE_16', '3D_AE_8']:
+        if model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4', '3D_AE_16', '3D_AE_8', '3D_AE_temporal_addition_2024']:
             trained_model, train_losses, test_losses = train_model_ae_te_pixel(
                 model, dataloader_train, dataloader_test,
                 epochs=epochs, optimizer=optimizer, lr=lr,
@@ -80,7 +80,7 @@ def train_model_multiple_runs_with_metrics(
             train_features, train_coord_dl = extract_features_vae(trained_model, dataloader_train, device=device)
             test_features, test_coord_dl = extract_features_vae(trained_model, dataloader_test, device=device)
             eval_features, eval_coord_dl = extract_features_vae(trained_model, dataloader_eval, device=device)
-        elif model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4', '3D_AE_16', '3D_AE_8']:
+        elif model_name in ['3D_AE_temporal_addition', '3D_AE_MVI', '3D_AE_B4', '3D_AE_16', '3D_AE_8', '3D_AE_temporal_addition_2024']:
             train_features, train_coord_dl = extract_features_ae(trained_model, dataloader_train, temp_embed_pixel=True, device=device)
             test_features, test_coord_dl = extract_features_ae(trained_model, dataloader_test, temp_embed_pixel=True, device=device)
             eval_features, eval_coord_dl = extract_features_ae(trained_model, dataloader_eval, temp_embed_pixel=True, device=device)

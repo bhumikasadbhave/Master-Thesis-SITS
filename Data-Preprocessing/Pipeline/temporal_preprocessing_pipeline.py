@@ -77,7 +77,7 @@ class PreProcessingPipelineTemporal:
         return success
 
     
-    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi', method='single'):
+    def get_processed_temporal_cubes(self, dataset_type, bands, vi_type='msi', method='single', data_year='2019'):
         """ 
         Generalized pipeline to load the saved field patches, remove border pixels, 
         and get final model-ready temporal cube for both train and test data.
@@ -94,7 +94,8 @@ class PreProcessingPipelineTemporal:
             temporal_images = load_field_images_temporal(self.load_train_dir)
 
             # Filter non-sugarbeet fields for train data
-            temporal_images = filter_non_sugarbeet_fields(temporal_images, config.sugarbeet_content_csv_path)
+            if data_year == '2019':
+                temporal_images = filter_non_sugarbeet_fields(temporal_images, config.sugarbeet_content_csv_path)
 
         elif dataset_type == 'eval':
             temporal_images = load_field_images_temporal(self.load_eval_dir)
