@@ -29,18 +29,18 @@ save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semeste
 # labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
 #### --- Server Load Paths 2019 --- ####
-# load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
-# load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
-# deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
-# labels_path = '/home/k64835/SITS-images/labels.csv'
-# sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"  #### Filtering fields that are not sugarbeet 
+load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
+load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
+deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
+labels_path = '/home/k64835/SITS-images/labels.csv'
+sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"  #### Filtering fields that are not sugarbeet 
 
 #### --- Server Load Paths 2024 --- ####
-load_directory_temporal_train = '/home/k64835/SITS-images-2024/train'
-load_directory_temporal_eval = '/home/k64835/SITS-images-2024/eval'
-deliverable_images_save_path = '/home/k64835/SITS-images-2024/output/train/'
-labels_path = '/home/k64835/SITS-images-2024/labels_2024.csv' 
-sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2024_sugar_content.csv"
+# load_directory_temporal_train = '/home/k64835/SITS-images-2024/train'
+# load_directory_temporal_eval = '/home/k64835/SITS-images-2024/eval'
+# deliverable_images_save_path = '/home/k64835/SITS-images-2024/output/train/'
+# labels_path = '/home/k64835/SITS-images-2024/labels_2024.csv' 
+# sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2024_sugar_content.csv"
 
 #### Trained Model Save Paths: Clustering Algorithms (Baseline 1) ####
 kmeans_b10_path = '/home/k64835/SITS-models/baseline_kmeans/kmeans_b10.pkl'

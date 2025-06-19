@@ -157,6 +157,7 @@ def compile_results_table_with_metrics(model_names, output_dir="Results"):
     loss_rows = []
     acc_rows = []
     recall_rows = []
+    precision_rows = []
     f1_rows = []
 
     for model_name in model_names:
@@ -164,6 +165,7 @@ def compile_results_table_with_metrics(model_names, output_dir="Results"):
         loss_row = {"Model": model_name}
         acc_row = {"Model": model_name}
         recall_row = {"Model": model_name}
+        precision_row = {"Model": model_name}
         f1_row = {"Model":model_name}
 
         for run in range(3):
@@ -175,6 +177,7 @@ def compile_results_table_with_metrics(model_names, output_dir="Results"):
             loss_row[f"Loss Run {run+1}"] = data["test_losses"][49]
             acc_row[f"Accuracy Run {run+1}"] = data["accuracy"]
             recall_row[f"Recall Run {run+1}"] = data["recall"]
+            precision_row[f"Precision Run {run+1}"] = data["precision"]
             f1_row[f"F1 Run {run+1}"] = data["f1_score"]
 
         # Load average file
@@ -185,18 +188,21 @@ def compile_results_table_with_metrics(model_names, output_dir="Results"):
         loss_row["Loss Avg"] = avg_data["avg_test_loss"][49]
         acc_row["Accuracy Avg"] = avg_data["avg_accuracy"]
         recall_row["Recall Avg"] = avg_data["avg_recall"]
+        precision_row["Precision Avg"] = avg_data["avg_precision"]
         f1_row["F1-score Avg"] = avg_data["avg_f1_score"]
 
         loss_rows.append(loss_row)
         acc_rows.append(acc_row)
         recall_rows.append(recall_row)
+        precision_rows.append(precision_row)
         f1_rows.append(f1_row)
 
     # Convert to DataFrames
     df_loss = pd.DataFrame(loss_rows)
     df_accuracy = pd.DataFrame(acc_rows)
     df_recall = pd.DataFrame(recall_rows)
+    df_precision = pd.DataFrame(precision_rows)
     df_f1 = pd.DataFrame(f1_rows)
 
-    return df_loss, df_accuracy, df_recall, df_f1
+    return df_loss, df_accuracy, df_recall, df_f1, df_precision
 
