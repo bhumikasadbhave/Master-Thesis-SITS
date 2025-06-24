@@ -46,7 +46,25 @@ class FieldDatasetMAE(Dataset):
         return len(self.inputs)
     
     def __getitem__(self, idx):
-        return self.inputs[idx], self.field_numbers[idx], self.timestamps[idx]
+        inputs = self.inputs[idx]
+        field_number = self.field_numbers[idx]
+        timestamp = self.timestamps[idx]
+        
+        return inputs,field_number,timestamp
+
+        # Convert list of tensors -> single stacked tensor
+        # if isinstance(timestamp, list):
+        #     if isinstance(timestamp[0], torch.Tensor):
+        #         timestamp = torch.stack(timestamp)  # (T, D)
+        #     else:
+        #         timestamp = torch.tensor(timestamp)  # if it's a list of lists or floats
+
+        # elif isinstance(timestamp, np.ndarray):
+        #     timestamp = torch.from_numpy(timestamp)
+
+        # return inputs, field_number, timestamp.float()
+
+
     
 def create_data_loader_mae(inputs, field_numbers, timestamps, mae=True, batch_size=64, shuffle=True):
     dataset = FieldDatasetMAE(inputs, field_numbers, timestamps, mae)

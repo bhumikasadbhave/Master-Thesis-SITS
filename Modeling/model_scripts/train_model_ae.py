@@ -1,6 +1,7 @@
 import time
 import torch
 import torch.nn as nn
+import config
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.cluster import KMeans
@@ -9,7 +10,8 @@ from sklearn.neighbors import NearestCentroid
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import accuracy_score, adjusted_rand_score, normalized_mutual_info_score, fowlkes_mallows_score
-
+from sklearn.model_selection import KFold
+import torch.utils.data as data_utils
 
 def train_model_ae(model, train_dataloader, test_dataloader, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
     """ Vanilla function to train the Autoencoder
@@ -259,4 +261,68 @@ def extract_features_vae(model, dataloader, device='mps'):
     return torch.cat(features), field_numbers_all
 
 
+### --- k-fold cross validation on reconstruction loss --- ###
 
+def compute_recon_error(model, dataloader, device):
+    model.eval()
+    criterion = nn.MSELoss(reduction='mean')
+    total_loss = 0.0
+    count = 0
+    with torch.no_grad():
+        for inputs_cpu, _, date_embeddings in dataloader:
+            inputs = inputs_cpu.to(device)
+            _, reconstructed = model(inputs, date_embeddings)
+            loss = criterion(reconstructed, inputs)
+            total_loss += loss.item() * inputs.size(0)
+            count += inputs.size(0)   
+    return total_loss / count
+
+def kfold_train_autoencoder(
+    model_class, dataset, modelparams, k=5, epochs=50, lr=0.001, batch_size=64, optimizer='Adam', device='cuda', momentum=0.9, random_seed=42
+):
+    kf = KFold(n_splits=k, shuffle=True, random_state=random_seed)
+    fold_recon_errors = []
+    
+    for fold_idx, (train_idx, val_idx) in enumerate(kf.split(range(len(dataset)))):
+        print(f"Fold {fold_idx+1}/{k}")
+        
+        train_subset = data_utils.Subset(dataset, train_idx)
+        val_subset = data_utils.Subset(dataset, val_idx)
+        
+        train_loader = torch.utils.data.DataLoader(train_subset, batch_size=batch_size, shuffle=True,collate_fn=custom_collate_fn2)
+        val_loader = torch.utils.data.DataLoader(val_subset, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn2)
+        
+        # Create model instance
+        model = model_class(**modelparams).to(device)
+        
+        # Train on current fold's training data
+        trained_model, train_losses, val_losses = train_model_ae_te_pixel(
+            model,
+            train_loader,
+            val_loader,
+            epochs=epochs,
+            optimizer=optimizer,
+            lr=lr,
+            momentum=momentum,
+            device=device
+        )
+        
+        # Evaluate reconstruction error on validation fold
+        recon_error = compute_recon_error(trained_model, val_loader, device)
+        print(f"Fold {fold_idx+1} reconstruction error: {recon_error:.6f}")
+        fold_recon_errors.append(recon_error)
+    
+    avg_recon_error = sum(fold_recon_errors) / k
+    print(f"Average reconstruction error over {k} folds: {avg_recon_error:.6f}")
+    
+    return avg_recon_error
+
+def custom_collate_fn2(batch):
+    inputs, field_numbers, timestamps = zip(*batch)
+    inputs = torch.stack(inputs, dim=0)  # Shape: (B, T, C, H, W)
+    inputs = inputs.permute(0, 2, 1, 3, 4)  # -> (B, C, T, H, W)
+    return (
+        inputs,
+        list(field_numbers),
+        list(timestamps),      # Keep timestamps as list of lists
+    )
