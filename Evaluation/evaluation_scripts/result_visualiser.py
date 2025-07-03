@@ -70,12 +70,12 @@ def draw_diseased_patches(temporal_images, x_y_coords, save_path="output/", patc
 
 
 
-def draw_diseased_patches_temporal(temporal_images, x_y_coords, save_path="output/", patch_size=4):
+def draw_diseased_patches_temporal(temporal_images, x_y_coords, T=7, save_path="output/", patch_size=4):
     """Final Deliverable Images with diseased subpatches alongwith their entire temporal stack"""
 
     os.makedirs(save_path, exist_ok=True)
     for field_idx in range(len(temporal_images)):
-        fig, axs = plt.subplots(1, 7, figsize=(18, 3))
+        fig, axs = plt.subplots(1, T, figsize=(T*3, 3))
 
         for img_idx in range(len(temporal_images[0])):
             img = temporal_images[field_idx][img_idx][:, :, :3]
@@ -113,7 +113,8 @@ def draw_diseased_patches_temporal(temporal_images, x_y_coords, save_path="outpu
                 y = int(split_key[-1])
                 coord_field_nums = [str(int(float(field))) for field in split_key[:-2]]
 
-                if is_diseased == 1 and field_id_image in coord_field_nums and img_idx==6:
+                if is_diseased == 1 and field_id_image in coord_field_nums and img_idx==T-1:
+                    # print('true....')
                     rect_size = patch_size
                     x_min = x - 1
                     y_min = y - 1

@@ -176,7 +176,7 @@ def plot_reconstructed_subpatches_temporal(model, dataloader, num_images=5, devi
                 break  # Only take the first batch
 
 
-def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_fields=5, device='cuda', model_type='ae'):
+def plot_reconstructed_patches_temporal(model, dataloader, old_images, T=7, num_fields=5, device='cuda', model_type='ae'):
     """Map patch-level reconstructions onto patch-level images"""
 
     model.eval()
@@ -228,19 +228,19 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
         patch_list = recon_dict[field_number]
         original_temporal = old_images[field_number]        #[7, 64, 64, 12]
         mask = original_temporal[0][:, :, 0] != 0           #mask for actual sugarbeet field pixels
-        recon_image = np.zeros((64, 64, 3, 7))
+        recon_image = np.zeros((64, 64, 3, T))
 
         for (x, y, patch_recon) in patch_list:
-            for t in range(7):
+            for t in range(T):
                 patch_np = patch_recon[:, t].permute(1, 2, 0).numpy()  # [4, 4, 3]
                 recon_image[y:y+4, x:x+4, :, t] = patch_np
-        for t in range(7):
+        for t in range(T):
             for c in range(3):
                 recon_image[:, :, c, t] *= mask                 #Mask reconstruction
 
-        fig, axs = plt.subplots(2, 7, figsize=(21, 6))          #PLOT
+        fig, axs = plt.subplots(2, T, figsize=(T*3, 6))          #PLOT
         fig.suptitle(f'Field {field_number}', fontsize=16)
-        for t in range(7):
+        for t in range(T):
             #Original image
             axs[0, t].imshow(normalize_for_display(original_temporal[t][:, :, :3]))  
             axs[0, t].set_title(f'Original T{t}')
@@ -254,7 +254,7 @@ def plot_reconstructed_patches_temporal(model, dataloader, old_images, num_field
         plt.show()
 
 
-def plot_temporal_grid_reconstructions(model, dataloader, old_images, device='cuda', model_type='ae', num_fields=7):
+def plot_temporal_grid_reconstructions(model, dataloader, old_images, T=7, device='cuda', model_type='ae', num_fields=7):
     """Grids of original and reconstructions for final model (for Manuscript)"""
 
     model.eval()
@@ -297,27 +297,27 @@ def plot_temporal_grid_reconstructions(model, dataloader, old_images, device='cu
     # Step 3: Gather temporal sequences
     for field_number in chosen_fields:
         patch_list = recon_dict[field_number]
-        original_temporal = old_images[field_number]  # [7, 64, 64, 12]
+        original_temporal = old_images[field_number]  # [T, 64, 64, 12]
         mask = original_temporal[0][:, :, 0] != 0
-        recon_image = np.zeros((64, 64, 3, 7))
+        recon_image = np.zeros((64, 64, 3, T))
 
         for (x, y, patch_recon) in patch_list:
-            for t in range(7):
+            for t in range(T):
                 patch_np = patch_recon[:, t].permute(1, 2, 0).numpy()
                 recon_image[y:y+4, x:x+4, :, t] = patch_np
 
-        for t in range(7):
+        for t in range(T):
             for c in range(3):
                 recon_image[:, :, c, t] *= mask
 
-        originals_all.append([normalize_for_display(original_temporal[t][:, :, :3]) for t in range(7)])
-        reconstructions_all.append([normalize_for_display(recon_image[:, :, :, t]) for t in range(7)])
+        originals_all.append([normalize_for_display(original_temporal[t][:, :, :3]) for t in range(T)])
+        reconstructions_all.append([normalize_for_display(recon_image[:, :, :, t]) for t in range(T)])
 
     # Step 4: Plot Originals Grid (Fields as rows, Time steps as columns)
-    fig, axs = plt.subplots(num_fields, 7, figsize=(3 * 7, 3 * num_fields))
+    fig, axs = plt.subplots(num_fields, T, figsize=(3 * T, 3 * num_fields))
     fig.suptitle("Originals", fontsize=18)
     for row in range(num_fields):  # row = field
-        for col in range(7):       # col = time step
+        for col in range(T):       # col = time step
             axs[row, col].imshow(originals_all[row][col])
             axs[row, col].axis('off')
             if row == 0:
@@ -329,10 +329,10 @@ def plot_temporal_grid_reconstructions(model, dataloader, old_images, device='cu
     plt.show()
 
     # Step 5: Plot Reconstructions Grid (Fields as rows, Time steps as columns)
-    fig, axs = plt.subplots(num_fields, 7, figsize=(3 * 7, 3 * num_fields))
+    fig, axs = plt.subplots(num_fields, T, figsize=(3 * T, 3 * num_fields))
     fig.suptitle("Reconstructions", fontsize=18)
     for row in range(num_fields):
-        for col in range(7):
+        for col in range(T):
             axs[row, col].imshow(reconstructions_all[row][col])
             axs[row, col].axis('off')
             if row == 0:

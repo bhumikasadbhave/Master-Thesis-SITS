@@ -1,39 +1,39 @@
 ### --- Paths for field extraction and saving from 1000x1000 images --- ###
 ## 2019 data ##
-sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/'
-sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/eval/'
-#Path to the base directory where image patches of extracted fields/patches are to be saved
-save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Train'
-save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
+# sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/train/'
+# sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/eval/'
+# #Path to the base directory where image patches of extracted fields/patches are to be saved
+# save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Train'
+# save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Eval'
 
 ## 2024 data ##
-# sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_train'
-# sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_eval'
-# save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/train'
-# save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/eval'
+sentinel_base_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_train'
+sentinel_base_path_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/2024_data_eval'
+save_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/train'
+save_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2024_data/patches/eval'
 
 ## Local paths ##
-# load_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
-# load_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
-# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
-# sugarbeet_content_csv_path = "/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2019_sugar_content.csv"
-# fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
-# labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
+load_directory_temporal_train = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-train5'
+load_directory_temporal_eval = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/Data-Temporal-test1'
+labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
+sugarbeet_content_csv_path = "/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/2019_sugar_content.csv"
+fields_base_directory = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Master-Thesis-Github/Master-Thesis/Data-Preprocessing/Data'
+labels_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/Temporal-Data/test/labels.csv'
 
 #### --- Server Load Paths --- ####
 ## 2019 data ##
-load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
-load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
-deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
-labels_path = '/home/k64835/SITS-images/labels.csv'
-sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"  #### Filtering fields that are not sugarbeet 
+# load_directory_temporal_train = '/home/k64835/SITS-images/Data-Temporal-train5'
+# load_directory_temporal_eval = '/home/k64835/SITS-images/Data-Temporal-test1'
+# deliverable_images_save_path = '/home/k64835/SITS-images/output/train/'
+# labels_path = '/home/k64835/SITS-images/labels.csv'
+# sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2019_sugar_content.csv"  #### Filtering fields that are not sugarbeet 
 
 ## 2024 data ##
-# load_directory_temporal_train = '/home/k64835/SITS-images-2024/train'
-# load_directory_temporal_eval = '/home/k64835/SITS-images-2024/eval'
-# deliverable_images_save_path = '/home/k64835/SITS-images-2024/output/train/'
-# labels_path = '/home/k64835/SITS-images-2024/labels_2024.csv' 
-# sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2024_sugar_content.csv"
+load_directory_temporal_train = '/home/k64835/SITS-images-2024/train'
+load_directory_temporal_eval = '/home/k64835/SITS-images-2024/eval'
+deliverable_images_save_path = '/home/k64835/SITS-images-2024/output/train/'
+labels_path = '/home/k64835/SITS-images-2024/labels_2024.csv' 
+sugarbeet_content_csv_path = "/home/k64835/SITS-csv/2024_sugar_content.csv"
 
 #### --- Server Load Paths --- ####
 #### Clustering Algorithms ####
@@ -88,6 +88,7 @@ predictions_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/predictions
 best_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_temporal_addition_best_model.pkl'
 best_8_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_8_best_model.pkl'
 best_16_model_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_16_best_model.pkl'
+best_model_2024_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/3D_AE_temporal_addition_2024_best_model.pkl'
 
 #### --- Local Model Paths --- ####
 # kmeans_b10_local_path = '/Users/bhumikasadbhave007/Desktop/Thesis_Models/SITS-models/baseline_kmeans/kmeans_b10.pkl'

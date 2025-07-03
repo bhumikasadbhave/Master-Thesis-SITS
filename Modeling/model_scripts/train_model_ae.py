@@ -104,7 +104,6 @@ def train_model_ae_te(model, train_dataloader, test_dataloader, out_channels=10,
     return model, epoch_train_losses, epoch_test_losses
 
 
-
 ### --- AE with pixel-level Time encodings--- ###
 def train_model_ae_te_pixel(model, train_dataloader, test_dataloader, out_channels=10, epochs=10, optimizer='Adam', lr=0.001, momentum=0.9, device='mps'):
     """ Vanilla function to train the Autoencoder
