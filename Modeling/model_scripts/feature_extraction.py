@@ -12,6 +12,7 @@ from einops import rearrange
 # from transformers import AutoModel
 import torch.nn.functional as F
 from sklearn.decomposition import PCA
+from collections import Counter
 # import timm
 # import cv2
 import numpy as np
@@ -60,7 +61,7 @@ def extract_global_histogram(data, bins=32):
     return np.array(features)
 
 
-# 2. Feature reduction using PCA on the channel dimension of Sentinel-2 data
+# 2. Feature reduction using PCA on Sentinel-2 data --> wrong
 def pca_feature_extraction(data, n_components=3):
    
     N, T, C, H, W = data.shape
@@ -75,6 +76,44 @@ def pca_feature_extraction(data, n_components=3):
     top_channel_indices = np.argsort(np.abs(pca.components_), axis=1)[:, ::-1]
 
     return pca, transformed, top_channel_indices
+
+
+# 2. Feature reduction using PCA on the channel dimension of Sentinel-2 data
+def pca_feature_extraction_channel(data, n_components=3, top_k=3):
+    """ Returns list of flattened PCA features for each sample, and top-k channel indices across all samples """
+    
+    N, T, C, H, W = data.shape
+    top_channels_all = []
+    features_list = []
+
+    for i in range(N):
+        sample = data[i]  # (T, C, H, W)
+        sample_np = sample.permute(0, 2, 3, 1).reshape(-1, C).cpu().numpy()  # (T*H*W, C)
+
+        valid_mask = ~(sample_np == 0).all(axis=1)
+        valid_pixels = sample_np[valid_mask]
+
+        pca = PCA(n_components=n_components)
+        transformed = pca.fit_transform(valid_pixels)
+
+        # Get top contributing channels for each sample
+        top_channels = np.argsort(np.abs(pca.components_), axis=1)[:, ::-1]
+        top_channels_flat = top_channels[:, :top_k].flatten()
+        top_channels_all.extend(top_channels_flat)
+
+        reconstructed = pca.transform(sample_np)
+        padded = np.zeros((T * H * W, n_components))
+        padded[valid_mask] = reconstructed
+
+        features = padded.reshape(T, H, W, n_components).transpose(3, 1, 2, 0)  # (n_components, H, W, T)
+        features_list.append(features.flatten())
+
+    # Find top-k most frequent original channels across all samples
+    counter = Counter(top_channels_all)
+    most_common = counter.most_common(top_k)
+    top_k_channels = [ch for ch, _ in most_common]
+
+    return features_list, top_k_channels
 
 
 
