@@ -66,6 +66,8 @@ kmeans_ae_3D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TS.pkl
 ae_3d_TE_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TE.pkl'
 kmeans_ae_3D_TEadd_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
 ae_3d_TEadd_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
+ae_2D_TE_path = '/home/k64835/Master-Thesis-SITS/Modeling/Results/Trained_Models/2D_AE_temporal_addition_best_model.pkl'
+kmeans_ae_2D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_2D_TE.pkl'
 
 ### Model paths for Experiments ###
 # --- Regression --- #
