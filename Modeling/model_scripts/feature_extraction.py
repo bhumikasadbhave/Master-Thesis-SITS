@@ -23,25 +23,6 @@ from skimage import color
 ###### -------------------------- Classical techniques for feature extraction -------------------------- ######
 
 # 1. Histogram features
-def extract_channel_histograms(data, bins=32):
-    """ Returns: numpy array of shape (N, T, C * bins): Flattened histograms per time step and channel"""
-
-    N, T, C, H, W = data.shape
-    all_features = []
-    for i in range(N):
-        sample_feats = []
-        for t in range(T):
-            for c in range(C):
-                channel_data = data[i, t, c] 
-                valid_pixels = channel_data[channel_data != 0]
-                hist, _ = np.histogram(valid_pixels, bins=bins, range=(1e-6, 1)) 
-                hist = hist.astype(np.float32)  
-                hist /= hist.sum()
-                sample_feats.extend(hist.tolist()) 
-        all_features.append(sample_feats)
-
-    return np.array(all_features)
-
 def extract_global_histogram(data, bins=32):
     """
     data: shape (N, T, C, H, W)
@@ -52,30 +33,17 @@ def extract_global_histogram(data, bins=32):
     for i in range(N):
         flat_vals = data[i].flatten()
         valid_vals = flat_vals[flat_vals != 0]
-        hist, _ = np.histogram(valid_vals, bins=bins, range=(1e-6, 1))
+        # hist, _ = np.histogram(valid_vals, bins=bins, range=(1e-6, 1))
+        valid_vals_np = valid_vals.detach().cpu().numpy()
+        min_val = float(valid_vals_np.min())
+        max_val = float(valid_vals_np.max())
+        hist, _ = np.histogram(valid_vals, bins=bins, range=(min_val, max_val))
         hist = hist.astype(np.float32)
         hist += 1e-6  # smoothing
         hist /= hist.sum()  # normalize
         features.append(hist)
 
     return np.array(features)
-
-
-# 2. Feature reduction using PCA on Sentinel-2 data --> wrong
-def pca_feature_extraction(data, n_components=3):
-   
-    N, T, C, H, W = data.shape
-    reshaped = data.permute(0, 1, 3, 4, 2).reshape(-1, C) # Shape: (N*T*H*W, C)
-    valid_mask = ~(reshaped == 0).all(axis=1)        # Remove zero pixels
-    valid_pixels = reshaped[valid_mask]
-    valid_pixels_np = valid_pixels.cpu().numpy()
-
-    # Apply PCA across channels
-    pca = PCA(n_components=n_components)
-    transformed = pca.fit_transform(valid_pixels_np)
-    top_channel_indices = np.argsort(np.abs(pca.components_), axis=1)[:, ::-1]
-
-    return pca, transformed, top_channel_indices
 
 
 # 2. Feature reduction using PCA on the channel dimension of Sentinel-2 data
