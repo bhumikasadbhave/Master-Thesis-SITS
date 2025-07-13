@@ -1,4 +1,4 @@
-# Master Thesis: Sugarbeet Stress Detection using SITS 🌱📡
+## Master Thesis: Sugarbeet Stress Detection using SITS 🌱📡
 ------------------------------------------------------------
 
 **Course**: MSc. in Artificial Intelligence  
@@ -21,7 +21,7 @@ Key steps include:
 
 This modular, scalable system allows for cross-seasonal deployment by simply updating the config.py file to apply the model to new Sentinel-2 data.
 
-## 🗂 Repository Structure
+### 🗂 Repository Structure
 ```  
 Master-Thesis-SITS/  
 │  
@@ -53,18 +53,18 @@ Master-Thesis-SITS/
         └── vi-expt.ipynb              # Vegetation Indices (VI) experiments  
 ```  
 
-## 📌 How to Run
+### 📌 How to Run
 1. Run Full Pipeline (Command Line): This performs preprocessing, modeling using the 3D_AE_B10 model with temporal encodings, and evaluation.
     python stress_detection_system.py
 
-2. Reproduce Manuscript Results
-Section 1: Uses saved JSONs (no Sentinel-2 data loading required).
-Section 2: Runs saved models on eval data for single-run performance.
+2. Reproduce Manuscript Results  
+Section 1: Uses saved JSONs (no Sentinel-2 data loading required).  
+Section 2: Runs saved models on eval data for single-run performance.  
 
-## 📁 Dataset
+### 📁 Dataset
 The experiments use Sentinel-2 satellite image time series focused on sugarbeet fields. Due to data storage size, raw Sentinel-2 data is not included in the Github repository. However, preprocessing scripts and model-ready formats are provided to replicate results.
 
-## 📬 Contact
+### 📬 Contact
 For questions, feedback, or collaboration opportunities:
 - Email: sadbhavebhumika21@gmail.com
 - LinkedIn: https://www.linkedin.com/in/bhumika05/
