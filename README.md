@@ -26,7 +26,7 @@ This modular, scalable system allows for cross-seasonal deployment by simply upd
 Master-Thesis-SITS/  
 │  
 ├── stress_detection_system.py          # Main script for full pipeline (preprocessing → model → evaluation)  
-├── reproducing_results.ipynb           # Notebook to reproduce key results from manuscript  
+├── reproducing_results.ipynb           # Notebook to reproduce the results from manuscript  
 │  
 ├── Data Preprocessing/  
 │   ├── scripts/                        # Helper scripts for preprocessing steps  
@@ -66,6 +66,6 @@ The experiments use Sentinel-2 satellite image time series focused on sugarbeet 
 
 ## 📬 Contact
 For questions, feedback, or collaboration opportunities:
-- Email: [sadbhavebhumika21@gmail.com]
-- LinkedIn: [https://www.linkedin.com/in/bhumika05/]
+- Email: sadbhavebhumika21@gmail.com
+- LinkedIn: https://www.linkedin.com/in/bhumika05/
 
