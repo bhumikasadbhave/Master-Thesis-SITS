@@ -203,8 +203,8 @@ def plot_losses_ae(train_loss, test_loss):
     # plt.title('Test Losses')
     plt.xlabel('Epochs', fontsize=14)
     plt.ylabel('Loss', fontsize=14)
-    plt.xticks(fontsize=11)
-    plt.yticks(fontsize=11)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
     # plt.yscale("log")
     plt.legend(fontsize=12)
     plt.tight_layout()
@@ -369,4 +369,40 @@ def plot_confusion_matrices(json_path):
     plt.tight_layout()
     plt.show()
 
+
+def plot_2019_vs_2024():
+    metrics = ['Accuracy', 'Precision', 'Recall', 'F1-score']
+    scores_2024 = [77.5, 86.09, 88.57, 87.28]
+    scores_2019 = [69.4, 70.36, 80.95, 75.21]
+
+    x = np.arange(len(metrics))  
+    width = 0.3  
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bars1 = ax.bar(x - width/2, scores_2024, width, label='2024', color='dodgerblue')
+    bars2 = ax.bar(x + width/2, scores_2019, width, label='2019', color='red')
+
+    # Labels and ticks
+    ax.set_ylabel('Score (%)', fontsize=12)
+    # ax.set_title('Performance Comparison: 2024 vs 2019', fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(metrics, fontsize=12)
+    ax.set_ylim(0, 100)
+    ax.legend(fontsize=11)
+
+    # Add bar value labels
+    def add_labels(bars):
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f'{height:.2f}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 4),
+                        textcoords="offset points",
+                        ha='center', va='bottom', fontsize=12)
+
+    add_labels(bars1)
+    add_labels(bars2)
+
+    plt.tight_layout()
+    plt.show()
 
