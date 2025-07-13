@@ -4,8 +4,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import DBSCAN
 # from sklearn_extra.cluster import KMedoids
 import numpy as np
-from pyclustering.cluster.kmedoids import kmedoids
-from pyclustering.utils.metric import distance_metric, type_metric
+
 
 def kmeans_function(train_patches, n_clusters, random_state=10):
     """Function to apply k-means to train_patches 
@@ -43,7 +42,7 @@ def db_scan_function(train_patches, eps=0.5, min_samples=5):
     return dbscan
 
 # old: uses scikitlearn-extra (was causing errors while installing the package)
-def kmedoids_function_old(train_patches, n_clusters, random_state=10, metric='euclidean'):
+def kmedoids_function(train_patches, n_clusters, random_state=10, metric='euclidean'):
     """Function to apply K-Medoids to train_patches
     (train_patches: can be image tensors or extracted feature tensors)
     metric (str): The distance metric to use ('euclidean', 'manhattan', etc.)
@@ -54,19 +53,19 @@ def kmedoids_function_old(train_patches, n_clusters, random_state=10, metric='eu
     return kmedoids
 
 
-def kmedoids_function(train_patches, n_clusters, random_state=10, metric='euclidean'):
-    """Function to apply K-Medoids to train_patches
-    (train_patches: can be image tensors or extracted feature tensors)
-    metric (str): The distance metric to use ('euclidean', 'manhattan', etc.)
-    """
-    np.random.seed(random_state)
-    flattened_data = train_patches.reshape(train_patches.size(0), -1).numpy()
-    initial_medoids = random.sample(range(len(flattened_data)), k=n_clusters) #random initial clusters
-    distance = distance_metric(
-        type_metric.EUCLIDEAN if metric == 'euclidean' else type_metric.MANHATTAN
-    )
-    kmedoids_instance = kmedoids(flattened_data, initial_medoids, data_type='points', metric=distance)
-    kmedoids_instance.process()
-    return kmedoids_instance
+# def kmedoids_function(train_patches, n_clusters, random_state=10, metric='euclidean'):
+#     """Function to apply K-Medoids to train_patches
+#     (train_patches: can be image tensors or extracted feature tensors)
+#     metric (str): The distance metric to use ('euclidean', 'manhattan', etc.)
+#     """
+#     np.random.seed(random_state)
+#     flattened_data = train_patches.reshape(train_patches.size(0), -1).numpy()
+#     initial_medoids = random.sample(range(len(flattened_data)), k=n_clusters) #random initial clusters
+#     distance = distance_metric(
+#         type_metric.EUCLIDEAN if metric == 'euclidean' else type_metric.MANHATTAN
+#     )
+#     kmedoids_instance = kmedoids(flattened_data, initial_medoids, data_type='points', metric=distance)
+#     kmedoids_instance.process()
+#     return kmedoids_instance
 
 

@@ -53,19 +53,19 @@ kmeans_hist_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/baselin
 kmeans_pca_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/baselines/kmeans_pca.pkl'
 
 #### Autoencoders main ####
-kmeans_ae_3D_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D.pkl'
-kmeans_ae_2D_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_2D.pkl'
-ae_3d_path = '/home/k64835/SITS-models/baseline_ae/ae_3D.pkl'
-ae_2D_path = '/home/k64835/SITS-models/baseline_ae/ae_2D.pkl'
+kmeans_ae_3D_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/kmeans_ae_3D.pkl'
+kmeans_ae_2D_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/kmeans_ae_2D.pkl'
+ae_3d_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/ae_3D.pkl'
+ae_2D_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/ae_2D.pkl'
 mae_save_dir = '/home/k64835/'
 
 #### Autoencoder with Temporal Encodings ####
-kmeans_ae_3D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TS.pkl'
-ae_3d_TE_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TE.pkl'
-kmeans_ae_3D_TEadd_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_3D_TSadd.pkl'
-ae_3d_TEadd_path = '/home/k64835/SITS-models/baseline_ae/ae_3D_TEadd.pkl'
-ae_2D_TE_path = '/home/k64835/SITS-models/baseline_ae/ae_2D_TE.pkl'
-kmeans_ae_2D_TE_path = '/home/k64835/SITS-models/baseline_ae/kmeans_ae_2D_TE.pkl'
+kmeans_ae_3D_TE_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/kmeans_ae_3D_TS.pkl'
+ae_3d_TE_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/ae_3D_TE.pkl'
+kmeans_ae_3D_TEadd_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/kmeans_ae_3D_TSadd.pkl'
+ae_3d_TEadd_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/ae_3D_TEadd.pkl'
+ae_2D_TE_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/ae_2D_TE.pkl'
+kmeans_ae_2D_TE_path = '/Users/bhumikasadbhave007/Desktop/THESIS/SITS-models/autoencoders/kmeans_ae_2D_TE.pkl'
 
 #### Result JSONs for all AE-based models and experiments ####
 results_json_path = '/Users/bhumikasadbhave007/Documents/THWS/Semester-4/MASTER-THESIS/GITHUB/Master-Thesis-SITS/Modeling/Results'
