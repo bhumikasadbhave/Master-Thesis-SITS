@@ -60,7 +60,7 @@ Master-Thesis-SITS/
 2. Reproduce Manuscript Results  
 Section 1: Uses saved JSONs (no Sentinel-2 data loading required).  
 Section 2: Runs saved models on eval data for single-run performance. All saved models are present in Google drive, download the saved models and accordingly change the paths in the config.py.   
-Google Drive path: https://drive.google.com/drive/folders/1Hiw_ZVep3FHMhLzMlI5_tQdLUdBk1xyn?usp=sharing  
+Google Drive path: https://drive.google.com/drive/folders/1dDHECUBRtsNBGkb1aF6Dzl8x_68RvZo2?usp=sharing  
 
 ### 📁 Dataset
 The experiments use Sentinel-2 satellite image time series focused on sugarbeet fields. Due to data storage size, raw Sentinel-2 data is not included in the Github repository. However, preprocessing scripts and model-ready formats are provided to replicate results.
