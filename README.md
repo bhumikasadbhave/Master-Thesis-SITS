@@ -4,15 +4,12 @@
 **Course**: MSc. in Artificial Intelligence  
 **Institution**: CAIRO, THWS  
 **Date**: 5th August, 2025 
-------------------------------------------------------------
 
 This repository contains the complete codebase for the Master's thesis titled "Sugarbeet Stress Detection using Satellite Image Time Series (SITS)."
 
 The thesis investigates stress detection in sugarbeet crops using Sentinel-2 image time series and various machine learning and deep learning models, with a focus on autoencoder-based architectures. The primary objective is to build a stress detection pipeline that works with minimal supervision, and is generalizable to data from different years.
 
-Temporal encodings and 3D convolutional autoencoders (e.g., 3D_AE_B10) are used to capture spatial-temporal patterns in sugarbeet crop development. A full preprocessing-to-evaluation pipeline is provided, along with experiments on varying the input data, and deliverables as stress maps.
-
-The pipeline requires minimal configuration—primarily file path setup—and is capable of direct deployment on new sugar-beet seasons.
+The stress detection pipeline requires minimal configuration—primarily file path setup—and is capable of direct deployment on new sugar-beet seasons.
 
 Key steps include:
 - Preprocessing of raw Sentinel-2 imagery into model-ready tensors
@@ -25,7 +22,7 @@ Key steps include:
 This modular, scalable system allows for cross-seasonal deployment by simply updating the config.py file to apply the model to new Sentinel-2 data.
 
 ## 🗂 Repository Structure
-  
+```  
 Master-Thesis-SITS/  
 │  
 ├── stress_detection_system.py          # Main script for full pipeline (preprocessing → model → evaluation)  
@@ -54,7 +51,7 @@ Master-Thesis-SITS/
         ├── sub-patch-size-expt.ipynb  # Patch size variation experiments  
         ├── threshold-expt.ipynb       # Sub-patch-to-patch threshold tuning  
         └── vi-expt.ipynb              # Vegetation Indices (VI) experiments  
-  
+```  
 
 ## 📌 How to Run
 1. Run Full Pipeline (Command Line): This performs preprocessing, modeling using the 3D_AE_B10 model with temporal encodings, and evaluation.
