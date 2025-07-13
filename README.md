@@ -1,12 +1,10 @@
-# Master-Thesis-SITS
+# Master Thesis: Sugarbeet Stress Detection using SITS 🌱📡
+------------------------------------------------------------
 
-# Sugarbeet Stress Detection using SITS 🌱📡
-
-Master Thesis – Remote Sensing & Machine Learning
-Course: MSc. in Artificial Intelligence
-Institution: CAIRO, THWS
-Date: 5th August, 2025
-------------------------------------------------------
+**Course**: MSc. in Artificial Intelligence  
+**Institution**: CAIRO, THWS  
+**Date**: 5th August, 2025 
+------------------------------------------------------------
 
 This repository contains the complete codebase for the Master's thesis titled "Sugarbeet Stress Detection using Satellite Image Time Series (SITS)."
 
@@ -27,36 +25,36 @@ Key steps include:
 This modular, scalable system allows for cross-seasonal deployment by simply updating the config.py file to apply the model to new Sentinel-2 data.
 
 ## 🗂 Repository Structure
-
-Master-Thesis-SITS/
-│
-├── stress_detection_system.py          # Main script for full pipeline (preprocessing → model → evaluation)
-├── reproducing_results.ipynb           # Notebook to reproduce key results from manuscript
-│
-├── Data Preprocessing/
-│   ├── scripts/                        # Helper scripts for preprocessing steps
-│   ├── Results/                        # Stored models, metrics, utility JSONs
-│   └── Pipeline/                       # Main data preprocessing pipeline
-│
-├── Modeling/
-│   ├── model_scripts/                  # Feature extraction, training, and model-related utilities
-│   └── Jupyter notebooks/
-│       ├── baseline_models.ipynb       # Raw data clustering, histograms, PCA
-│       ├── autoencoder_models.ipynb    # 2D & 3D autoencoders with/without temporal encodings
-│       ├── MAE_implementation.ipynb    # SatMAE adaptation for stress detection
-│       └── visualisations.ipynb        # Stress maps, reconstructed images, and plots
-│
-├── Evaluation/
-│   └── evaluation_scripts/            # Evaluation and visualization for clustering and AE outputs
-│
-└── Experimentation/
-    ├── expt_scripts/                  # Experimental utilities and plotting scripts
-    └── Jupyter notebooks/
-        ├── 2024-data-expt.ipynb       # Full pipeline on unseen 2024 data
-        ├── sub-patch-size-expt.ipynb  # Patch size variation experiments
-        ├── threshold-expt.ipynb       # Sub-patch-to-patch threshold tuning
-        └── vi-expt.ipynb              # Vegetation Indices (VI) experiments
-
+  
+Master-Thesis-SITS/  
+│  
+├── stress_detection_system.py          # Main script for full pipeline (preprocessing → model → evaluation)  
+├── reproducing_results.ipynb           # Notebook to reproduce key results from manuscript  
+│  
+├── Data Preprocessing/  
+│   ├── scripts/                        # Helper scripts for preprocessing steps  
+│   ├── Results/                        # Stored models, metrics, utility JSONs  
+│   └── Pipeline/                       # Main data preprocessing pipeline  
+│  
+├── Modeling/  
+│   ├── model_scripts/                  # Feature extraction, training, and model-related utilities  
+│   └── Jupyter notebooks/  
+│       ├── baseline_models.ipynb       # Raw data clustering, histograms, PCA  
+│       ├── autoencoder_models.ipynb    # 2D & 3D autoencoders with/without temporal encodings  
+│       ├── MAE_implementation.ipynb    # SatMAE adaptation for stress detection  
+│       └── visualisations.ipynb        # Stress maps, reconstructed images, and plots  
+│  
+├── Evaluation/  
+│   └── evaluation_scripts/            # Evaluation and visualization for clustering and AE outputs  
+│  
+└── Experimentation/  
+    ├── expt_scripts/                  # Experimental utilities and plotting scripts  
+    └── Jupyter notebooks/  
+        ├── 2024-data-expt.ipynb       # Full pipeline on unseen 2024 data  
+        ├── sub-patch-size-expt.ipynb  # Patch size variation experiments  
+        ├── threshold-expt.ipynb       # Sub-patch-to-patch threshold tuning  
+        └── vi-expt.ipynb              # Vegetation Indices (VI) experiments  
+  
 
 ## 📌 How to Run
 1. Run Full Pipeline (Command Line): This performs preprocessing, modeling using the 3D_AE_B10 model with temporal encodings, and evaluation.
@@ -71,6 +69,6 @@ The experiments use Sentinel-2 satellite image time series focused on sugarbeet 
 
 ## 📬 Contact
 For questions, feedback, or collaboration opportunities:
-Email: [sadbhavebhumika21@gmail.com]
-LinkedIn: [https://www.linkedin.com/in/bhumika05/]
+- Email: [sadbhavebhumika21@gmail.com]
+- LinkedIn: [https://www.linkedin.com/in/bhumika05/]
 
