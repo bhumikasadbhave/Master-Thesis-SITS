@@ -72,7 +72,7 @@ Data Sample/
 ├── field_number.pkl                    # Sugar-beet field ID mask  
 ├── fieldmask.pkl                       # Sugar-beet field mask (not used in the code)  
 ├── temporal_data/  
-│   ├── 2019_05_10.pkl                  # Can be anything, but should be preceeded by the acquisition date  
+│   ├── 2019_05_10.pkl                  # File name can be anything, but should be preceeded by the acquisition date  
 │   ├── 2019_05_25.pkl                  # All temporal instances  
 ```
 
