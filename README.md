@@ -58,7 +58,7 @@ Master-Thesis-SITS/
     python stress_detection_system.py
 
 2. Reproduce Manuscript Results  
-Section 1: Uses saved JSONs (no Sentinel-2 data loading required).  
+Section 1: Uses saved JSONs (no Sentinel-2 data, no saved models required).  
 Section 2: Runs saved models on eval data for single-run performance. All saved models are present in Google drive, download the saved models and accordingly change the paths in the config.py.   
 Google Drive path: https://drive.google.com/drive/folders/1dDHECUBRtsNBGkb1aF6Dzl8x_68RvZo2?usp=sharing  
 
