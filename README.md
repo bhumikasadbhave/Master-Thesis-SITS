@@ -63,7 +63,18 @@ Section 2: Runs saved models on eval data for single-run performance. All saved 
 Google Drive path: https://drive.google.com/drive/folders/1MYEqBMHsyZJfZE469GeKPMTvHp41nPcy?usp=sharing   
 
 ### 📁 Dataset
-The experiments use Sentinel-2 satellite image time series focused on sugarbeet fields. Due to data storage size, raw Sentinel-2 data is not included in the Github repository. However, preprocessing scripts and model-ready formats are provided to replicate results.
+The experiments use Sentinel-2 satellite image time series focused on sugarbeet fields. Due to data storage size, raw Sentinel-2 data is not included in the Github repository. However, preprocessing scripts and model-ready formats are provided to replicate results.  
+A data sample has been provided in the Google drive as well for reference.  
+The data is stored in a folder structure as follows(provided by Greenspin):  
+```  
+Data Sample/  
+│  
+├── field_number.pkl                    # Sugar-beet field ID mask  
+├── fieldmask.pkl                       # Sugar-beet field mask (not used in the code)  
+├── temporal_data/  
+│   ├── 2019_05_10.pkl                  # Can be anything, but should be preceeded by the acquisition date  
+│   ├── 2019_05_25.pkl                  # All temporal instances  
+```
 
 ### 📬 Contact
 For questions, feedback, or collaboration opportunities:
