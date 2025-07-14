@@ -54,7 +54,7 @@ Master-Thesis-SITS/
 ```  
 
 ### 📌 How to Run
-1. Run Full Pipeline (Command Line): This performs preprocessing, modeling using the 3D_AE_B10 architecture with temporal encodings, and evaluation.  
+1. Run Full Pipeline (Command Line): This performs preprocessing, modeling using the 3D_AE_B10 architecture with temporal encodings, and evaluation. Command:    
     > python stress_detection_system.py
 
 2. Reproduce Manuscript Results  
