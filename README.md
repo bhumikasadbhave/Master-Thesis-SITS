@@ -30,7 +30,7 @@ Master-Thesis-SITS/
 │  
 ├── Data Preprocessing/  
 │   ├── scripts/                        # Helper scripts for preprocessing steps  
-│   ├── Results/                        # Stored models, metrics, utility JSONs  
+│   ├── Results/                        # Stored results, utility JSONs  
 │   └── Pipeline/                       # Main data preprocessing pipeline  
 │  
 ├── Modeling/  
